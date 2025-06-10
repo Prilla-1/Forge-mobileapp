@@ -1,18 +1,18 @@
-import React, { useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
+  ActivityIndicator,
+  Animated,
+  Image,
+  RefreshControl,
   SafeAreaView,
   SectionList,
-  RefreshControl,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
   StatusBar,
-  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 const mockData = {
   recentPrototypes: [
@@ -40,11 +40,11 @@ const mockData = {
 function Header() {
   return (
     <View style={styles.header}>
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => {}}>
         <Ionicons name="person-circle-outline" size={24} color="#333" />
       </TouchableOpacity>
       <Text style={styles.headerTitle}>Recents</Text>
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => {}}>
         <Ionicons name="search-outline" size={24} color="#333" />
       </TouchableOpacity>
     </View>
