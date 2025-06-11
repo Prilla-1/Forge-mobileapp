@@ -16,13 +16,16 @@ import { useRouter } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
 
 // Types
-type SearchItem = {
+export type SearchItem = {
   id: string;
   title: string;
   description: string;
   date: string;
   thumbnail: any;
   type: 'design' | 'prototype' | 'file';
+  owner?: string;
+  lastModified?: string;
+  team?: string;
 };
 
 type SearchFilter = {
@@ -39,7 +42,10 @@ const mockData: SearchItem[] = [
     description: 'Website prototype',
     date: 'Today',
     thumbnail: require('../../assets/images/thumbnail1.png'),
-    type: 'prototype'
+    type: 'prototype',
+    owner: 'You',
+    lastModified: 'Today',
+    team: 'Personal',
   },
   {
     id: '2',
@@ -47,7 +53,10 @@ const mockData: SearchItem[] = [
     description: 'Mobile app UI',
     date: 'Yesterday',
     thumbnail: require('../../assets/images/thumbnail2.png'),
-    type: 'design'
+    type: 'design',
+    owner: 'You',
+    lastModified: 'Yesterday',
+    team: 'Personal',
   },
   {
     id: '3',
@@ -55,9 +64,40 @@ const mockData: SearchItem[] = [
     description: 'Promotional design',
     date: '2 days ago',
     thumbnail: require('../../assets/images/thumbnail3.png'),
-    type: 'file'
+    type: 'file',
+    owner: 'You',
+    lastModified: '2 days ago',
+    team: 'Personal',
   }
 ];
+
+// Mock data for team projects
+const mockTeamProjects: SearchItem[] = [
+  {
+    id: 'team1',
+    title: 'Team Project 1',
+    description: 'Collaborative design',
+    date: 'June 6, 2025',
+    thumbnail: require('../../assets/images/thumbnail1.png'),
+    type: 'design',
+    owner: 'John Doe',
+    lastModified: '2 hours ago',
+    team: 'Design Team',
+  },
+  {
+    id: 'team2',
+    title: 'Team Project 2',
+    description: 'Marketing campaign',
+    date: 'June 5, 2025',
+    thumbnail: require('../../assets/images/thumbnail2.png'),
+    type: 'prototype',
+    owner: 'Jane Smith',
+    lastModified: '1 day ago',
+    team: 'Marketing',
+  },
+];
+
+const allProjects = [...mockData, ...mockTeamProjects];
 
 // Search Result Item Component
 const SearchResultItem = ({ item }: { item: SearchItem }) => (
@@ -66,6 +106,9 @@ const SearchResultItem = ({ item }: { item: SearchItem }) => (
     <View style={styles.cardContent}>
       <Text style={styles.title}>{item.title}</Text>
       <Text style={styles.meta}>{item.description} • {item.date}</Text>
+      {item.owner && <Text style={styles.owner}>Owner: {item.owner}</Text>}
+      {item.lastModified && <Text style={styles.lastModified}>Last Modified: {item.lastModified}</Text>}
+      {item.team && <Text style={styles.team}>Team: {item.team}</Text>}
     </View>
   </TouchableOpacity>
 );
@@ -149,15 +192,14 @@ export default function SearchScreen() {
     if (text.trim() === '') {
       setFilteredData([]);
     } else {
-      let results = mockData.filter(item =>
-        item.title.toLowerCase().includes(text.toLowerCase())
+      let results = allProjects.filter(item =>
+        item.title.toLowerCase().includes(text.toLowerCase()) ||
+        (item.team && item.team.toLowerCase().includes(text.toLowerCase()))
       );
-
       // Apply filters
       if (filters.type !== 'all') {
         results = results.filter(item => item.type === filters.type);
       }
-
       setFilteredData(results);
     }
   };
@@ -222,10 +264,8 @@ export default function SearchScreen() {
           </TouchableOpacity>
         )}
       </View>
-
       <SearchFilters filters={filters} onFilterChange={handleFilterChange} />
-
-      {query === '' ? (
+      {query.trim() === '' ? (
         <ScrollView
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -326,6 +366,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     marginTop: 4,
+  },
+  owner: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
+  },
+  lastModified: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
+  },
+  team: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
   },
   filterContainer: {
     paddingHorizontal: 16,

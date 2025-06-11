@@ -26,6 +26,7 @@ const mockData = [
     thumbnails: [
       require('../../assets/images/thumbnail1.png'),
     ],
+    favorite: false,
   },
   {
     id: '2',
@@ -36,6 +37,7 @@ const mockData = [
     thumbnails: [
       require('../../assets/images/thumbnail2.png'),
     ],
+    favorite: false,
   },
   {
     id: '3',
@@ -46,6 +48,7 @@ const mockData = [
     thumbnails: [
       require('../../assets/images/thumbnail3.png'),
     ],
+    favorite: false,
   },
   {
     id: '4',
@@ -56,6 +59,7 @@ const mockData = [
     thumbnails: [
       require('../../assets/images/thumbnail4.png'),
     ],
+    favorite: false,
   },
   {
     id: '5',
@@ -64,9 +68,10 @@ const mockData = [
     date: 'June 1, 2025',
     type: 'Design File',
     thumbnails: [],
+    favorite: false,
   },
   // Add as many items as you want!
-];
+].map(item => ({ ...item, favorite: false }));
 
 function Header() {
   const router = useRouter();
@@ -138,9 +143,10 @@ const RecentsSkeletonLoader = () => {
 };
 
 export default function RecentsScreen() {
-  const [data] = useState(mockData);
+  const [data, setData] = useState(mockData);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -158,15 +164,36 @@ export default function RecentsScreen() {
     }, 1500);
   }, []);
 
+  const toggleFavorite = (id: string) => {
+    setData(prevData =>
+      prevData.map(item =>
+        item.id === id ? { ...item, favorite: !item.favorite } : item
+      )
+    );
+  };
+
   const renderItem = ({ item }: any) => (
-    <TouchableOpacity style={styles.card} activeOpacity={0.8}>
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.8}
+      onPress={() => router.push(`/file-details/${item.id}`)}
+    >
       <Image
         source={item.thumbnails[0]}
         style={styles.thumbnail}
         resizeMode="cover"
       />
       <View style={styles.cardContent}>
-        <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+          <TouchableOpacity onPress={() => toggleFavorite(item.id)} style={{ marginLeft: 8 }}>
+            <Ionicons
+              name={item.favorite ? 'star' : 'star-outline'}
+              size={20}
+              color={item.favorite ? '#FFD600' : '#888'}
+            />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.meta} numberOfLines={1}>{item.description} • {item.date}</Text>
       </View>
     </TouchableOpacity>
@@ -183,8 +210,9 @@ export default function RecentsScreen() {
     </View>
   );
 
-  const prototypes = data.filter(item => item.type === 'Prototype');
-  const designFiles = data.filter(item => item.type === 'Design File');
+  const favorites = data.filter(item => item.favorite);
+  const prototypes = data.filter(item => item.type === 'Prototype' && !item.favorite);
+  const designFiles = data.filter(item => item.type === 'Design File' && !item.favorite);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -198,6 +226,7 @@ export default function RecentsScreen() {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
           >
+            {favorites.length > 0 && renderSection('Favorites', favorites)}
             {prototypes.length > 0 && renderSection('Recent Prototypes', prototypes)}
             {designFiles.length > 0 && renderSection('Recent Files', designFiles)}
           </ScrollView>
