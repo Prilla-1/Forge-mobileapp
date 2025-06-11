@@ -3,44 +3,76 @@ import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  FlatList,
   Image,
   RefreshControl,
   SafeAreaView,
-  SectionList,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  ScrollView
 } from 'react-native';
+import { useRouter } from 'expo-router';
 
-const mockData = {
-  recentPrototypes: [
-    {
-      id: '1',
-      title: 'Landing Page',
-      description: 'Website prototype',
-      date: 'Today',
-      type: 'Prototype',
-      thumbnail: require('../../assets/images/thumbnail1.png'),
-    }
-  ],
-  recentFiles: [
-    {
-      id: '2',
-      title: 'Figma Redesign',
-      description: 'Mobile app UI',
-      date: 'Yesterday',
-      type: 'Design File',
-      thumbnail: require('../../assets/images/thumbnail2.png'),
-    }
-  ]
-};
+const mockData = [
+  {
+    id: '1',
+    title: 'Landing Page',
+    description: 'Website prototype',
+    date: 'June 5, 2025',
+    type: 'Prototype',
+    thumbnails: [
+      require('../../assets/images/thumbnail1.png'),
+    ],
+  },
+  {
+    id: '2',
+    title: 'Figma Redesign',
+    description: 'Mobile app UI',
+    date: 'June 4, 2025',
+    type: 'Design File',
+    thumbnails: [
+      require('../../assets/images/thumbnail2.png'),
+    ],
+  },
+  {
+    id: '3',
+    title: 'Marketing Banner',
+    description: 'Promotional design',
+    date: 'June 3, 2025',
+    type: 'Design File',
+    thumbnails: [
+      require('../../assets/images/thumbnail3.png'),
+    ],
+  },
+  {
+    id: '4',
+    title: 'App Icon Concepts',
+    description: 'Icon set for new app',
+    date: 'June 2, 2025',
+    type: 'Design File',
+    thumbnails: [
+      require('../../assets/images/thumbnail4.png'),
+    ],
+  },
+  {
+    id: '5',
+    title: 'New File',
+    description: 'Some description',
+    date: 'June 1, 2025',
+    type: 'Design File',
+    thumbnails: [],
+  },
+  // Add as many items as you want!
+];
 
 function Header() {
+  const router = useRouter();
   return (
     <View style={styles.header}>
-      <TouchableOpacity onPress={() => {}}>
+      <TouchableOpacity onPress={() => router.push('/settings')}>
         <Ionicons name="person-circle-outline" size={24} color="#333" />
       </TouchableOpacity>
       <Text style={styles.headerTitle}>Recents</Text>
@@ -128,20 +160,31 @@ export default function RecentsScreen() {
 
   const renderItem = ({ item }: any) => (
     <TouchableOpacity style={styles.card} activeOpacity={0.8}>
-      <Image source={item.thumbnail} style={styles.thumbnail} />
+      <Image
+        source={item.thumbnails[0]}
+        style={styles.thumbnail}
+        resizeMode="cover"
+      />
       <View style={styles.cardContent}>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.meta}>{item.description} • {item.date}</Text>
+        <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+        <Text style={styles.meta} numberOfLines={1}>{item.description} • {item.date}</Text>
       </View>
     </TouchableOpacity>
   );
 
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Ionicons name="folder-open-outline" size={64} color="#ccc" />
-      <Text style={styles.emptyText}>No recent files</Text>
+  const renderSection = (title: string, items: any[]) => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {items.map((item) => (
+        <View key={item.id}>
+          {renderItem({ item })}
+        </View>
+      ))}
     </View>
   );
+
+  const prototypes = data.filter(item => item.type === 'Prototype');
+  const designFiles = data.filter(item => item.type === 'Design File');
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -150,22 +193,14 @@ export default function RecentsScreen() {
       ) : (
         <>
           <Header />
-          <SectionList
-            sections={[
-              { title: 'Recent Prototypes', data: data.recentPrototypes },
-              { title: 'Recent Files', data: data.recentFiles }
-            ]}
-            renderSectionHeader={({ section: { title }}: { section: { title: string } }) => (
-              <Text style={styles.sectionHeader}>{title}</Text>
-            )}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.id}
-            ListEmptyComponent={loading ? <ActivityIndicator size="large" color="#999" /> : renderEmpty()}
+          <ScrollView
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
-            contentContainerStyle={!data.recentPrototypes.length && !data.recentFiles.length && !loading ? styles.emptyPadding : { paddingBottom: 20 }}
-          />
+          >
+            {prototypes.length > 0 && renderSection('Recent Prototypes', prototypes)}
+            {designFiles.length > 0 && renderSection('Recent Files', designFiles)}
+          </ScrollView>
         </>
       )}
     </SafeAreaView>
@@ -186,13 +221,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
     borderRadius: 10,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+  thumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: '#eee',
   },
-  headerText: {
-    marginLeft: 10,
+  cardContent: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: 'center',
   },
   title: {
     fontSize: 16,
@@ -203,17 +241,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     marginTop: 4,
-  },
-  thumbnailRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  thumbnail: {
-    width: 40,
-    height: 40,
-    borderRadius: 6,
-    backgroundColor: '#eee',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -243,18 +270,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#1a1a1a',
-  },
-  cardContent: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  sectionHeader: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
   },
   skeletonCard: {
     flexDirection: 'row',
@@ -315,5 +330,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#e0e0e0',
     borderRadius: 4,
     margin: 16,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
   },
 });

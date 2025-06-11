@@ -9,8 +9,11 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  RefreshControl
 } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 
 // Types
 type SearchItem = {
@@ -129,6 +132,16 @@ export default function SearchScreen() {
     sort: 'recent'
   });
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const router = useRouter();
+  const navigation = useNavigation();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1500);
+  }, []);
 
   // Handle search
   const handleSearch = (text: string) => {
@@ -213,14 +226,34 @@ export default function SearchScreen() {
       <SearchFilters filters={filters} onFilterChange={handleFilterChange} />
 
       {query === '' ? (
-        renderSearchHistory()
+        <ScrollView
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {renderSearchHistory()}
+          {/* Your Projects */}
+          <Text style={styles.sectionTitle}>Your Projects</Text>
+          <TouchableOpacity onPress={() => router.push({ pathname: '/project-details/[projectId]', params: { projectId: 'team' } })} style={styles.projectRow}>
+            <Text style={styles.projectItem}>Team project</Text>
+          </TouchableOpacity>
+        </ScrollView>
       ) : filteredData.length === 0 ? (
-        <View style={styles.placeholder}>
+        <ScrollView
+          contentContainerStyle={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
           <Ionicons name="alert-circle-outline" size={64} color="#ccc" />
           <Text style={styles.placeholderText}>No results found</Text>
-        </View>
+        </ScrollView>
       ) : (
-        <ScrollView>
+        <ScrollView
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
           {filteredData.map((item, index) => (
             <SearchResultItem key={index} item={item} />
           ))}
@@ -335,5 +368,21 @@ const styles = StyleSheet.create({
   historyText: {
     marginLeft: 12,
     fontSize: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+  },
+  projectRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  projectItem: {
+    fontSize: 16,
+    color: '#333',
   },
 });
