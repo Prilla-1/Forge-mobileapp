@@ -1,7 +1,16 @@
 // app/layout.tsx
 import { Stack } from "expo-router";
+import React, { useState } from "react";
+import OnboardingScreen from "./onboarding";
 
 export default function RootLayout() {
+  // In a real app, use persistent storage (AsyncStorage/SecureStore) for onboarding state
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
+
+  if (!onboardingComplete) {
+    return <OnboardingScreen onDone={() => setOnboardingComplete(true)} />;
+  }
+
   return (
     <Stack
       screenOptions={{
