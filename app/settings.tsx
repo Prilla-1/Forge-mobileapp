@@ -1,9 +1,33 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React, { useState, useRef } from 'react';
+
+const DEFAULT_AVATAR = require('../assets/images/icon.png');
 
 export default function SettingsScreen() {
   const router = useRouter();
+  // Profile state
+  const [name, setName] = useState('Your Name');
+  const [avatar, setAvatar] = useState(null); // uri or null
+  const [editingName, setEditingName] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const nameInputRef = useRef(null);
+
+  // Mock image picker
+  const pickImage = async () => {
+    // In a real app, use expo-image-picker or similar
+    Alert.alert('Change Avatar', 'Image picker not implemented in this mock.');
+    // Example: setAvatar('uri-to-new-image')
+  };
+
+  const handleSave = () => {
+    setEditingName(false);
+    setDirty(false);
+    // Persist changes if needed
+    Alert.alert('Profile updated', 'Your changes have been saved.');
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -15,9 +39,43 @@ export default function SettingsScreen() {
         <View style={{ width: 28 }} />
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        {/* Blank Profile Section */}
+        {/* Editable Profile Section */}
         <View style={styles.profileSection}>
-          <Text style={styles.profileLabel}>Name</Text>
+          <TouchableOpacity onPress={pickImage} style={styles.avatarWrapper}>
+            {avatar ? (
+              <Image source={{ uri: avatar }} style={styles.avatar} />
+            ) : (
+              <Image source={DEFAULT_AVATAR} style={styles.avatar} />
+            )}
+            <View style={styles.editAvatarIcon}>
+              <Ionicons name="camera" size={18} color="#fff" />
+            </View>
+          </TouchableOpacity>
+          <View style={styles.nameRow}>
+            {editingName ? (
+              <TextInput
+                ref={nameInputRef}
+                style={styles.nameInput}
+                value={name}
+                onChangeText={text => { setName(text); setDirty(true); }}
+                onBlur={() => setEditingName(false)}
+                autoFocus
+                maxLength={32}
+              />
+            ) : (
+              <TouchableOpacity onPress={() => setEditingName(true)}>
+                <Text style={styles.nameText}>{name}</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={() => setEditingName(true)}>
+              <Ionicons name="pencil" size={16} color="#888" style={{ marginLeft: 8 }} />
+            </TouchableOpacity>
+          </View>
+          {dirty && (
+            <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+              <Text style={styles.saveBtnText}>Save</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Teams and organizations */}
@@ -74,17 +132,63 @@ const styles = StyleSheet.create({
     color: '#222',
   },
   profileSection: {
-    height: 72,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
     marginBottom: 12,
-    justifyContent: 'center',
-    paddingLeft: 24,
+    alignItems: 'center',
+    paddingVertical: 24,
   },
-  profileLabel: {
-    fontSize: 16,
-    color: '#888',
+  avatarWrapper: {
+    position: 'relative',
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#eee',
+  },
+  editAvatarIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#a07bb7',
+    borderRadius: 12,
+    padding: 4,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  nameText: {
+    fontSize: 18,
+    color: '#222',
+    fontWeight: '600',
+  },
+  nameInput: {
+    fontSize: 18,
+    color: '#222',
+    fontWeight: '600',
+    borderBottomWidth: 1,
+    borderBottomColor: '#a07bb7',
+    minWidth: 120,
+    paddingVertical: 2,
+  },
+  saveBtn: {
+    backgroundColor: '#a07bb7',
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 24,
+    marginTop: 6,
+  },
+  saveBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
   sectionLabel: {
     fontSize: 16,

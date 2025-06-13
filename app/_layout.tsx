@@ -1,14 +1,30 @@
 // app/layout.tsx
 import { Stack } from "expo-router";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import OnboardingScreen from "./onboarding";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function RootLayout() {
-  // In a real app, use persistent storage (AsyncStorage/SecureStore) for onboarding state
-  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem("onboardingComplete").then(value => {
+      setOnboardingComplete(value === "true");
+    });
+  }, []);
+
+  const handleOnboardingDone = async () => {
+    await AsyncStorage.setItem("onboardingComplete", "true");
+    setOnboardingComplete(true);
+  };
+
+  if (onboardingComplete === null) {
+    // Optionally show a splash/loading screen here
+    return null;
+  }
 
   if (!onboardingComplete) {
-    return <OnboardingScreen onDone={() => setOnboardingComplete(true)} />;
+    return <OnboardingScreen onDone={handleOnboardingDone} />;
   }
 
   return (
