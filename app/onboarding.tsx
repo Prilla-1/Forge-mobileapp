@@ -63,7 +63,7 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
             <View key={i} style={[styles.dot, step === i && styles.activeDot]} />
           ))}
         </View>
-        <View style={[styles.bottomRow, { marginBottom: insets.bottom + 24 }]}>
+        <View style={[styles.bottomRow, { marginBottom: insets.bottom + 24 }]}> 
           <TouchableOpacity onPress={handleBack} disabled={step === 0}>
             <Text style={[styles.backText, step === 0 && { opacity: 0.3 }]}>back</Text>
           </TouchableOpacity>

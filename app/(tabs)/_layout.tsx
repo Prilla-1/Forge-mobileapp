@@ -51,6 +51,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="search" options={{ title: 'Search' }} />
       <Tabs.Screen name="activity" options={{ title: 'Activity' }} />
       <Tabs.Screen name="mirror" options={{ title: 'Mirror' }} />
+
     </Tabs>
   );
 }

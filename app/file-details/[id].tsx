@@ -1,9 +1,14 @@
 import { useLocalSearchParams } from 'expo-router';
-import { View, Text, StyleSheet, Button, Alert, Share, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Button, Alert, Share, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+// Import mock data from recents or search tab
+import { mockData, mockTeamProjects } from '../(tabs)/search';
 
 export default function FileDetailsScreen() {
   const { id } = useLocalSearchParams();
+  // Find the file/project by id
+  const allFiles = [...mockData, ...mockTeamProjects];
+  const file = allFiles.find(item => item.id === id);
 
   // Mock handlers
   const handleEdit = () => {
@@ -13,7 +18,7 @@ export default function FileDetailsScreen() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Check out this project: ${id}`,
+        message: `Check out this project: ${file ? file.title : id}`,
       });
     } catch (error) {
       Alert.alert('Error', 'Could not share the project.');
@@ -31,11 +36,27 @@ export default function FileDetailsScreen() {
     );
   };
 
+  if (!file) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>File/Project Details</Text>
+        <Text style={styles.id}>ID: {id}</Text>
+        <Text style={styles.placeholder}>Not found.</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>File/Project Details</Text>
-      <Text style={styles.id}>ID: {id}</Text>
-      <Text style={styles.placeholder}>Details for this file/project will be displayed here.</Text>
+      <Text style={styles.title}>{file.title}</Text>
+      {file.thumbnail && (
+        <Image source={file.thumbnail} style={styles.thumbnail} />
+      )}
+      <Text style={styles.meta}>{file.description}</Text>
+      <Text style={styles.meta}>Type: {file.type.charAt(0).toUpperCase() + file.type.slice(1)}</Text>
+      <Text style={styles.meta}>Owner: {file.owner || 'Unknown'}</Text>
+      {file.team && <Text style={styles.meta}>Team: {file.team}</Text>}
+      {file.lastModified && <Text style={styles.meta}>Last Modified: {file.lastModified}</Text>}
       <View style={styles.actions}>
         <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
           <Ionicons name="pencil" size={22} color="#333" />
@@ -65,6 +86,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
+    textAlign: 'center',
   },
   id: {
     fontSize: 18,
@@ -76,11 +98,25 @@ const styles = StyleSheet.create({
     color: '#888',
     marginBottom: 32,
   },
+  meta: {
+    fontSize: 16,
+    color: '#444',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  thumbnail: {
+    width: 120,
+    height: 120,
+    marginBottom: 16,
+    borderRadius: 10,
+    resizeMode: 'cover',
+  },
   actions: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 24,
+    marginTop: 24,
   },
   actionButton: {
     alignItems: 'center',
@@ -91,4 +127,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
   },
-}); 
+});

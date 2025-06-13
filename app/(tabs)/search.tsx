@@ -99,19 +99,28 @@ const mockTeamProjects: SearchItem[] = [
 
 const allProjects = [...mockData, ...mockTeamProjects];
 
+export { mockData, mockTeamProjects };
+
 // Search Result Item Component
-const SearchResultItem = ({ item }: { item: SearchItem }) => (
-  <TouchableOpacity style={styles.card} activeOpacity={0.8}>
-    <Image source={item.thumbnail} style={styles.thumbnail} />
-    <View style={styles.cardContent}>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.meta}>{item.description} • {item.date}</Text>
-      {item.owner && <Text style={styles.owner}>Owner: {item.owner}</Text>}
-      {item.lastModified && <Text style={styles.lastModified}>Last Modified: {item.lastModified}</Text>}
-      {item.team && <Text style={styles.team}>Team: {item.team}</Text>}
-    </View>
-  </TouchableOpacity>
-);
+const SearchResultItem = ({ item }: { item: SearchItem }) => {
+  const router = useRouter();
+  return (
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.8}
+      onPress={() => router.push(`/file-details/${item.id}`)}
+    >
+      <Image source={item.thumbnail} style={styles.thumbnail} />
+      <View style={styles.cardContent}>
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.meta}>{item.description} • {item.date}</Text>
+        {item.owner && <Text style={styles.owner}>Owner: {item.owner}</Text>}
+        {item.lastModified && <Text style={styles.lastModified}>Last Modified: {item.lastModified}</Text>}
+        {item.team && <Text style={styles.team}>Team: {item.team}</Text>}
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 // Search Filters Component
 const SearchFilters = ({ 

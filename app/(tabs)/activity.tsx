@@ -4,20 +4,49 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 export default function ActivityScreen() {
-  // Mock unread count
-  const [unreadCount, setUnreadCount] = useState(0);
+  // Mock activity data
+  const [activities, setActivities] = useState([
+    {
+      id: '1',
+      text: 'Jane commented on Mobile App UI',
+      time: '2h ago',
+      unread: true,
+    },
+    {
+      id: '2',
+      text: 'You were added to Team Project 1',
+      time: '1d ago',
+      unread: false,
+    },
+  ]);
   const [selectedTab, setSelectedTab] = useState<'all' | 'unread'>('all');
-  // Mock user data
   const avatarUrl = null; // Replace with a real URL to test image avatar
-  const userInitial = 'G';
   const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
+
+  // Calculate unread count
+  const unreadCount = activities.filter(a => a.unread).length;
+
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
     setTimeout(() => {
       setRefreshing(false);
     }, 1500);
   }, []);
-  const router = useRouter();
+
+  const handleActivityPress = (id: string) => {
+    setActivities(prev => prev.map(a => a.id === id ? { ...a, unread: false } : a));
+    // For demo: show alert or log
+    if (typeof window !== 'undefined' && window.alert) {
+      window.alert('Viewing activity details (placeholder)');
+    } else {
+      console.log('Viewing activity details (placeholder)');
+    }
+  };
+
+  const visibleActivities = selectedTab === 'all'
+    ? activities
+    : activities.filter(a => a.unread);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -57,11 +86,30 @@ export default function ActivityScreen() {
         {/* Divider */}
         <View style={styles.divider} />
 
-        {/* Empty State */}
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>You're all caught up</Text>
-          <Text style={styles.emptySubtitle}>Check back later for new updates.</Text>
-        </View>
+        {/* Activity List */}
+        {visibleActivities.length > 0 ? (
+          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+            {visibleActivities.map(activity => (
+              <TouchableOpacity
+                key={activity.id}
+                style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18, opacity: activity.unread ? 1 : 0.6 }}
+                onPress={() => handleActivityPress(activity.id)}
+                activeOpacity={0.7}
+              >
+                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: activity.unread ? '#FF3B30' : 'transparent', marginRight: 12 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 15, fontWeight: activity.unread ? '600' : '400', color: '#222' }}>{activity.text}</Text>
+                  <Text style={{ fontSize: 13, color: '#888', marginTop: 2 }}>{activity.time}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyTitle}>You're all caught up</Text>
+            <Text style={styles.emptySubtitle}>Check back later for new updates.</Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

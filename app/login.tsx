@@ -5,18 +5,60 @@ import { useRouter } from 'expo-router';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [error, setError] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+
+  const validateEmail = (email: string) => {
+    // Simple email regex
+    return /\S+@\S+\.\S+/.test(email);
+  };
+
+  const handleLogin = () => {
+    setError('');
+    if (!email || !password) {
+      setError('Please enter both email and password.');
+      return;
+    }
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      // Simulate successful login
+      router.replace('/(tabs)/recents');
+    }, 1000);
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Log in to Figma</Text>
-
-      <TextInput style={styles.input} placeholder="Email" />
-      <TextInput style={styles.input} placeholder="Password" secureTextEntry />
-
-      <TouchableOpacity style={styles.loginButton} onPress={() => router.replace('/(tabs)/recents')}>
-        <Text style={styles.buttonText}>Log In</Text>
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        autoCapitalize="none"
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+      />
+      <TouchableOpacity
+        style={[styles.loginButton, loading && { opacity: 0.7 }]}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Log In'}</Text>
       </TouchableOpacity>
-
       <TouchableOpacity onPress={() => router.push('/signup')}>
         <Text style={styles.switchText}>
           No account? <Text style={styles.link}>Create one</Text>
@@ -54,6 +96,12 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     textAlign: 'center',
+  },
+  errorText: {
+    color: '#d32f2f',
+    marginBottom: 12,
+    textAlign: 'center',
+    fontSize: 15,
   },
   switchText: {
     textAlign: 'center',
