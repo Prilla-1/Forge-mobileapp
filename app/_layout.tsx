@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import React, { useState } from "react";
 import OnboardingScreen from "./onboarding";
 
+
 export default function RootLayout() {
   const [onboardingComplete, setOnboardingComplete] = useState(false);
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, Dimensions, Platform } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, Dimensions, Platform, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
@@ -32,12 +32,22 @@ const steps = [
 export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
   const [step, setStep] = useState(0);
   const insets = useSafeAreaInsets();
-
+  const scrollRef = React.useRef<ScrollView>(null);
+  const onScroll = (e: any) => {
+    const index = Math.round(e.nativeEvent.contentOffset.x / width);
+    if (index !== step) setStep(index);
+  };
   const handleNext = () => {
-    if (step < steps.length - 1) setStep(step + 1);
+    if (step < steps.length - 1) {
+      scrollRef.current?.scrollTo({ x: width * (step + 1), animated: true });
+      setStep(step + 1);
+    }
   };
   const handleBack = () => {
-    if (step > 0) setStep(step - 1);
+    if (step > 0) {
+      scrollRef.current?.scrollTo({ x: width * (step - 1), animated: true });
+      setStep(step - 1);
+    }
   };
   const handleSkip = () => {
     onDone();
@@ -50,14 +60,29 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
     <SafeAreaView style={styles.safeArea}>
       <Image source={require('../assets/images/fullscreen.png')} style={styles.fullscreenBg} resizeMode="cover" />
       <View style={styles.overlay}>
-        <TouchableOpacity style={styles.skip} onPress={handleSkip}>
-          <Text style={styles.skipText}>skip</Text>
-        </TouchableOpacity>
-        <View style={styles.content}>
-          <Image source={steps[step].image} style={styles.stepImage} resizeMode="contain" />
-          <Text style={styles.title}>{steps[step].title}</Text>
-          <Text style={styles.subtitle}>{steps[step].subtitle}</Text>
-        </View>
+        {step < steps.length - 1 && (
+          <TouchableOpacity style={[styles.skip, { top: insets.top + 16 }]} onPress={handleSkip} activeOpacity={0.85}>
+            <Text style={styles.skipText}>skip</Text>
+          </TouchableOpacity>
+        )}
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          contentContainerStyle={{ alignItems: 'center' }}
+          style={{ flexGrow: 0 }}
+        >
+          {steps.map((stepItem, i) => (
+            <View key={stepItem.key} style={[styles.content, { width }]}> 
+              <Image source={stepItem.image} style={styles.stepImage} resizeMode="contain" />
+              <Text style={styles.title}>{stepItem.title}</Text>
+              <Text style={styles.subtitle}>{stepItem.subtitle}</Text>
+            </View>
+          ))}
+        </ScrollView>
         <View style={styles.progressRow}>
           {steps.map((_, i) => (
             <View key={i} style={[styles.dot, step === i && styles.activeDot]} />
@@ -103,14 +128,26 @@ const styles = StyleSheet.create({
   },
   skip: {
     position: 'absolute',
-    top: 24,
+    // top will be set dynamically using insets.top + 16
     right: 32,
     zIndex: 2,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    paddingVertical: 8,
+    paddingHorizontal: 22,
+    borderWidth: 1.5,
+    borderColor: '#e0d6d0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   skipText: {
-    color: '#888',
+    color: '#a07bb7',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   content: {
     alignItems: 'center',
@@ -160,7 +197,7 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   backText: {
-    color: '#888',
+    color: '#3578e5', // blue
     fontSize: 16,
     fontWeight: '500',
   },

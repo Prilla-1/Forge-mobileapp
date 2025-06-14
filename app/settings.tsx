@@ -7,6 +7,20 @@ const DEFAULT_AVATAR = require('../assets/images/icon.png');
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const handleLogout = () => {
+    Alert.alert(
+      "Log out",
+      "Are you sure you want to log out?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Log out",
+          style: "destructive",
+          onPress: () => router.replace('/login'),
+        },
+      ]
+    );
+  };
   // Profile state
   const [name, setName] = useState('Your Name');
   const [avatar, setAvatar] = useState(null); // uri or null
@@ -55,7 +69,7 @@ export default function SettingsScreen() {
             {editingName ? (
               <TextInput
                 ref={nameInputRef}
-                style={styles.nameInput}
+                style={styles.nameInput} 
                 value={name}
                 onChangeText={text => { setName(text); setDirty(true); }}
                 onBlur={() => setEditingName(false)}
@@ -103,9 +117,10 @@ export default function SettingsScreen() {
           <Text style={styles.optionText}>Help</Text>
           <Ionicons name="chevron-forward" size={20} color="#888" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.optionRow}>
+        <TouchableOpacity style={styles.optionRow} onPress={handleLogout}>
           <Text style={[styles.optionText, { color: '#D32F2F' }]}>Log out</Text>
         </TouchableOpacity>
+
       </ScrollView>
     </View>
   );
