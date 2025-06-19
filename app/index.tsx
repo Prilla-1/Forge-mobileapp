@@ -12,7 +12,7 @@ export default function HomePage() {
         <Image
           source={require('../assets/images/homepage.png')}
           style={styles.image}
-          resizeMode="contain"
+          resizeMode="cover"
         />
       </View>
 
@@ -45,8 +45,8 @@ const styles = StyleSheet.create({
     marginTop: -40,
   },
   image: {
-    width: 220,
-    height: 120,
+    width: 420,
+    height: 300,
     marginBottom: 40,
   },
   subtitle: {

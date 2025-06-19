@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -18,8 +18,11 @@ export default function HelpScreen() {
         <View style={{ width: 28 }} />
       </View>
       <View style={styles.body}>
-        <TouchableOpacity style={styles.row}>
-          <Text style={styles.label}>Report issue</Text>
+        <TouchableOpacity
+          style={styles.row}
+          onPress={() => Linking.openURL('https://help.figma.com/')}
+        >
+          <Text style={[styles.label, styles.helpLink]}>Figma Help Center</Text>
         </TouchableOpacity>
         <View style={styles.row}>
           <Text style={styles.label}>Toggle shake to report</Text>
@@ -67,5 +70,9 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     color: '#222',
+  },
+  helpLink: {
+    color: '#007AFF',
+    textDecorationLine: 'underline',
   },
 }); 

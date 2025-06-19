@@ -11,7 +11,7 @@ type OnboardingScreenProps = {
 const steps = [
   {
     key: 1,
-    title: 'Welcome to Figmine',
+    title: 'Welcome to Forge',
     subtitle: 'Your Figma projects, anywhere, anytime. Access your designs and prototypes on the go.',
     image: require('../assets/images/screen1.png'),
   },
