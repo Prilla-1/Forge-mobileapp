@@ -1,6 +1,7 @@
 // app/login.tsx
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 export default function LoginScreen() {
@@ -9,6 +10,7 @@ export default function LoginScreen() {
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState('');
   const [loading, setLoading] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
 
   const validateEmail = (email: string) => {
     // Simple email regex
@@ -45,19 +47,35 @@ export default function LoginScreen() {
         value={email}
         onChangeText={setEmail}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={[styles.input, { flex: 1 }]}
+          placeholder="Password"
+          secureTextEntry={!showPassword}
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TouchableOpacity
+          onPress={() => setShowPassword((prev) => !prev)}
+          style={styles.showHideButton}
+          accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+        >
+          <Ionicons
+            name={showPassword ? 'eye-off' : 'eye'}
+            size={22}
+            color="#888"
+          />
+        </TouchableOpacity>
+      </View>
       <TouchableOpacity
         style={[styles.loginButton, loading && { opacity: 0.7 }]}
         onPress={handleLogin}
         disabled={loading}
       >
         <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Log In'}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => alert('Password recovery coming soon!')} style={styles.forgotPasswordLink}>
+        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.push('/signup')}>
         <Text style={styles.switchText}>
@@ -109,5 +127,30 @@ const styles = StyleSheet.create({
   link: {
     color: '#007bff',
     textDecorationLine: 'underline',
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#999',
+    borderRadius: 6,
+    marginBottom: 16,
+    paddingRight: 8,
+  },
+  showHideButton: {
+    padding: 8,
+  },
+  showHideText: {
+    color: '#007bff',
+    fontSize: 15,
+  },
+  forgotPasswordLink: {
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  forgotPasswordText: {
+    color: '#007bff',
+    textDecorationLine: 'underline',
+    fontSize: 15,
   },
 });
