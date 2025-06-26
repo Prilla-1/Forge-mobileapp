@@ -37,7 +37,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Log in to Figma</Text>
+      <Text style={styles.header}>Log in to Forge</Text>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       <TextInput
         style={styles.input}
@@ -48,25 +48,27 @@ export default function LoginScreen() {
         onChangeText={setEmail}
       />
       <View style={styles.passwordContainer}>
-        <TextInput
-          style={[styles.input, { flex: 1 }]}
-          placeholder="Password"
-          secureTextEntry={!showPassword}
-          value={password}
-          onChangeText={setPassword}
-        />
-        <TouchableOpacity
-          onPress={() => setShowPassword((prev) => !prev)}
-          style={styles.showHideButton}
-          accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-        >
-          <Ionicons
-            name={showPassword ? 'eye-off' : 'eye'}
-            size={22}
-            color="#888"
-          />
-        </TouchableOpacity>
-      </View>
+  <TextInput
+    style={styles.passwordInput}
+    placeholder="Password"
+    secureTextEntry={!showPassword}
+    value={password}
+    onChangeText={setPassword}
+    autoCapitalize="none"
+  />
+  <TouchableOpacity
+    onPress={() => setShowPassword((prev) => !prev)}
+    style={styles.eyeIcon}
+    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+    activeOpacity={0.7}
+  >
+    <Ionicons
+      name={showPassword ? 'eye-off' : 'eye'}
+      size={22}
+      color="#888"
+    />
+  </TouchableOpacity>
+</View>
       <TouchableOpacity
         style={[styles.loginButton, loading && { opacity: 0.7 }]}
         onPress={handleLogin}
@@ -135,10 +137,18 @@ const styles = StyleSheet.create({
     borderColor: '#999',
     borderRadius: 6,
     marginBottom: 16,
-    paddingRight: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#fff',
   },
-  showHideButton: {
-    padding: 8,
+  passwordInput: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingRight: 8,
+    fontSize: 16,
+    color: '#333',
+  },
+  eyeIcon: {
+    padding: 6,
   },
   showHideText: {
     color: '#007bff',
