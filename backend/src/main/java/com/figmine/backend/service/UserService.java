@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
     private final UserRepository userRepository;
 
     public UserProfileResponse getProfile(User user) {
@@ -24,14 +25,28 @@ public class UserService {
 
     @Transactional
     public void updateProfile(User user, String name, String avatarUrl) {
-        user.setName(name);
-        user.setAvatarUrl(avatarUrl);
+        if (name != null && !name.trim().isEmpty()) {
+            user.setName(name);
+        }
+
+        if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
+            user.setAvatarUrl(avatarUrl);
+        }
+
         userRepository.save(user);
+
+        // Optional: log update
+        // log.info("Updated profile for user ID {}", user.getId());
     }
 
     @Transactional
     public void completeOnboarding(User user) {
-        user.setOnboardingComplete(true);
-        userRepository.save(user);
+        if (!user.isOnboardingComplete()) {
+            user.setOnboardingComplete(true);
+            userRepository.save(user);
+        }
+
+        // Optional: log onboarding status
+        // log.info("Onboarding completed for user ID {}", user.getId());
     }
 }
