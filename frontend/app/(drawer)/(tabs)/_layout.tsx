@@ -22,20 +22,20 @@ export default function TabsLayout() {
           let iconName: keyof typeof Ionicons.glyphMap = 'apps';
 
           if (route.name === 'CanvasScreen') iconName = 'brush-outline';
-          if (route.name === 'ToolsPanel') iconName = 'construct';
+          if (route.name === 'ToolsScreen') iconName = 'construct';
           if (route.name === 'LayerScreen') iconName = 'layers-outline';
           if (route.name === 'mirror') iconName = 'phone-portrait-outline';
-          if (route.name === 'PropertiesScreen') iconName = 'settings-outline';
+          if (route.name === 'Templates') iconName ='albums-outline';
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
     >
       <Tabs.Screen name="mirror" options={{ headerShown: false, title: 'Mirror' }} />
-      <Tabs.Screen name="ToolsPanel" options={{ title: 'Tools' }} />
+      <Tabs.Screen name="ToolsScreen" options={{ title: 'Tools' }} />
       <Tabs.Screen name="CanvasScreen" options={{ title: 'Canvas' }} />
       <Tabs.Screen name="LayerScreen" options={{ title: 'Layers' }} />
-      <Tabs.Screen name="PropertiesScreen" options={{ title: 'Props' }} />
+      <Tabs.Screen name="Templates" options={{ title: 'Templates' }} />
     </Tabs>
   );
 }

@@ -1,180 +1,239 @@
-import React, { useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   View,
-  StyleSheet,
+  Text,
+  TextInput,
   TouchableOpacity,
   Modal,
-  Text,
-  Image,
+  StyleSheet,
+  FlatList
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
-import {
-  Gesture,
-  GestureDetector,
-  GestureHandlerRootView,
-} from 'react-native-gesture-handler';
 import { useCanvas } from '../context/CanvasContext';
 import { ShapeType } from '../../constants/type';
-
-const DraggableShape = ({ shape }: { shape: ShapeType }) => {
-  const { deleteShapeById } = useCanvas();
-  const [showMenu, setShowMenu] = useState(false);
-
-  const translateX = useSharedValue(shape.x);
-  const translateY = useSharedValue(shape.y);
-
-  const dragGesture = Gesture.Pan()
-    .onUpdate((event) => {
-      translateX.value = withSpring(event.translationX + shape.x);
-      translateY.value = withSpring(event.translationY + shape.y);
-    });
-
-  const longPressGesture = Gesture.LongPress()
-    .minDuration(600)
-    .onStart(() => {
-      setShowMenu(true);
-    });
-
-  const composedGesture = Gesture.Race(longPressGesture, dragGesture);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { translateX: translateX.value },
-        { translateY: translateY.value },
-      ],
-    };
-  });
-
-  const handleDelete = () => {
-    setShowMenu(false);
-    deleteShapeById(shape.id);
-  };
-
-  const getShapeStyle = () => {
-    const base = {
-      width: shape.width,
-      height: shape.height,
-      position: 'absolute' as const,
-    };
-
-    switch (shape.type) {
-      case 'rectangle':
-        return {
-          ...base,
-          backgroundColor: shape.color || '#3498db',
-          borderRadius: 4,
-        };
-      case 'circle':
-        return {
-          ...base,
-          backgroundColor: shape.color || '#e74c3c',
-          borderRadius: 999,
-        };
-      case 'triangle':
-        return {
-          width: 0,
-          height: 0,
-          borderLeftWidth: shape.width / 2,
-          borderRightWidth: shape.width / 2,
-          borderBottomWidth: shape.height,
-          backgroundColor: 'transparent',
-          borderLeftColor: 'transparent',
-          borderRightColor: 'transparent',
-          borderBottomColor: shape.color || '#2ecc71',
-          borderStyle: 'solid',
-          position: 'absolute' as const,
-        };
-      case 'image':
-        return {
-          ...base,
-        };
-      default:
-        return base;
-    }
-  };
-
-  return (
-    <>
-      <GestureDetector gesture={composedGesture}>
-        <Animated.View
-          style={[
-            getShapeStyle(),
-            animatedStyle,
-            { left: shape.x, top: shape.y },
-          ]}
-        >
-          {shape.type === 'image' && shape.uri && (
-            <Image
-              source={{ uri: shape.uri }}
-              style={{
-                width: shape.width,
-                height: shape.height,
-                borderRadius: 10,
-              }}
-              resizeMode="cover"
-            />
-          )}
-        </Animated.View>
-      </GestureDetector>
-
-      {/* Pop-up Menu */}
-      <Modal transparent visible={showMenu} animationType="fade">
-        <TouchableOpacity
-          style={styles.overlay}
-          activeOpacity={1}
-          onPressOut={() => setShowMenu(false)}
-        >
-          <View style={styles.menu}>
-            <TouchableOpacity onPress={handleDelete}>
-              <Text style={styles.menuText}>🗑️ Delete</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-    </>
-  );
-};
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { FontAwesome } from '@expo/vector-icons';
 
 const Canvas = () => {
-  const { shapes } = useCanvas();
+  const {
+    shapes,
+    addTextShape,
+    updateShape,
+    selectedShapeId,
+    selectShape,
+  } = useCanvas();
+
+  const [textInputVisible, setTextInputVisible] = useState(false);
+  const [formatModalVisible, setFormatModalVisible] = useState(false);
+  const [inputText, setInputText] = useState('');
+  const [fontSize, setFontSize] = useState(16);
+  const [fontColor, setFontColor] = useState('black');
+  const [bold, setBold] = useState(false);
+  const [italic, setItalic] = useState(false);
+
+  const selectedShape = shapes.find((shape) => shape.id === selectedShapeId);
+
+  useEffect(() => {
+    if (selectedShape?.type === 'text') {
+      setInputText(selectedShape.text || '');
+      setFontSize(selectedShape.style?.fontSize || 16);
+      setFontColor(selectedShape.style?.color || 'black');
+    }
+  }, [selectedShapeId]);
+
+  const handleFormatUpdate = () => {
+    if (selectedShape && selectedShape.type === 'text') {
+      updateShape(selectedShape.id, {
+        ...selectedShape,
+        text: inputText,
+        style: {
+          ...selectedShape.style,
+          fontSize,
+          color: fontColor,
+          fontWeight: bold ? 'bold' : 'normal',
+          fontStyle: italic ? 'italic' : 'normal',
+        },
+      });
+    }
+    setFormatModalVisible(false);
+  };
+
+  const renderShape = (shape: ShapeType) => {
+    const isSelected = selectedShapeId === shape.id;
+
+    if (shape.type === 'text') {
+      return (
+        <TouchableOpacity
+          key={shape.id}
+          style={[
+            styles.shape,
+            {
+              top: shape.position.y,
+              left: shape.position.x,
+              position: 'absolute',
+            },
+          ]}
+          onLongPress={() => {
+            selectShape(shape.id);
+            setFormatModalVisible(true);
+          }}
+        >
+          <Text
+            style={{
+              fontSize: shape.style.fontSize || 16,
+              color: shape.style.color || 'black',
+              fontWeight: shape.style.fontWeight || 'normal',
+              fontStyle: shape.style.fontStyle || 'normal',
+            }}
+          >
+            {shape.text}
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    // Placeholder for rectangle/circle/image
+    return (
+      <View
+        key={shape.id}
+        style={[
+          styles.shape,
+          {
+            backgroundColor: shape.style.backgroundColor || '#ccc',
+            width: shape.style.width || 100,
+            height: shape.style.height || 100,
+            top: shape.position.y,
+            left: shape.position.x,
+            position: 'absolute',
+          },
+        ]}
+      />
+    );
+  };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={styles.canvas}>
-        {shapes.map((shape) => (
-          <DraggableShape key={shape.id} shape={shape} />
-        ))}
+      <View style={styles.container}>
+        {shapes.map(renderShape)}
+
+        {/* Floating toolbar */}
+        <View style={styles.toolbar}>
+          <TouchableOpacity
+            onPress={() => {
+              addTextShape();
+            }}
+          >
+            <FontAwesome name="plus" size={24} color="white" />
+            <Text style={styles.toolbarText}>Add Text</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Format Modal */}
+        <Modal visible={formatModalVisible} animationType="slide" transparent>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text>Format Text</Text>
+
+              <TextInput
+                placeholder="Enter text"
+                value={inputText}
+                onChangeText={setInputText}
+                style={styles.textInput}
+              />
+
+              <TextInput
+                placeholder="Font size"
+                keyboardType="numeric"
+                value={fontSize.toString()}
+                onChangeText={(text) => setFontSize(Number(text))}
+                style={styles.textInput}
+              />
+
+              <TextInput
+                placeholder="Font color"
+                value={fontColor}
+                onChangeText={setFontColor}
+                style={styles.textInput}
+              />
+
+              <View style={styles.formatButtons}>
+                <TouchableOpacity onPress={() => setBold(!bold)}>
+                  <Text style={{ fontWeight: bold ? 'bold' : 'normal' }}>
+                    B
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setItalic(!italic)}>
+                  <Text style={{ fontStyle: italic ? 'italic' : 'normal' }}>
+                    I
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.saveBtn}
+                onPress={handleFormatUpdate}
+              >
+                <Text style={styles.saveText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </GestureHandlerRootView>
   );
 };
 
+export default Canvas;
+
 const styles = StyleSheet.create({
-  canvas: {
+  container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
-  overlay: {
-    flex: 1,
-    backgroundColor: '#00000066',
+  shape: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  menu: {
-    backgroundColor: 'white',
+  toolbar: {
+    position: 'absolute',
+    bottom: 30,
+    left: 30,
+    backgroundColor: '#000',
+    padding: 10,
+    borderRadius: 10,
+  },
+  toolbarText: {
+    color: 'white',
+    fontSize: 12,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    width: '80%',
     padding: 20,
     borderRadius: 10,
-    elevation: 10,
   },
-  menuText: {
-    fontSize: 18,
-    color: 'red',
+  textInput: {
+    borderBottomWidth: 1,
+    borderColor: '#999',
+    marginVertical: 10,
+    padding: 5,
+  },
+  formatButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 10,
+  },
+  saveBtn: {
+    backgroundColor: '#000',
+    padding: 10,
+    alignItems: 'center',
+    borderRadius: 5,
+  },
+  saveText: {
+    color: 'white',
   },
 });
-
-export default Canvas;

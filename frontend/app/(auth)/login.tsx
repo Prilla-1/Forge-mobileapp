@@ -8,11 +8,11 @@ import COLORS from '../../constants/Colors';
 import axios from 'axios';
 import {useFonts} from 'expo-font';
 
-const API_URL = 'http://10.230.179.165:8081/api/auth/login';
+const API_URL = 'http://10.222.231.165:8081/api/auth/login';
 
 export default function LoginScreen() {
   const [fontsLoaded] = useFonts({
-    'JetBrainsMono-Medium': require('../../assets/fonts/fonts/ttf'),
+    'JetBrainsMono-Medium': require('../../assets/fonts/fonts/ttf/JetBrainsMono-Medium.ttf'),
   });
   const router = useRouter();
   const [email, setEmail] = React.useState('');
@@ -167,7 +167,10 @@ const styles = StyleSheet.create({
   },
   header: {
     fontSize: 24,
+    fontFamily:'JetBrainsMono-Medium',
+    fontWeight:'light',
     marginBottom: 50,
+    color:'blue',
     textAlign: 'center',
   },
   inputContainer: {

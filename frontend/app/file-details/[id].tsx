@@ -2,7 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { View, Text, StyleSheet, Button, Alert, Share, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 // Import mock data from recents or search tab
-import { mockData, mockTeamProjects } from '../search';
+import { mockData, mockTeamProjects } from '../components/search';
 
 export default function FileDetailsScreen() {
   const { id } = useLocalSearchParams();

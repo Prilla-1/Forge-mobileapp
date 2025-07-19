@@ -1,7 +1,22 @@
 import React from 'react';
-import { View, Image, StyleSheet, Alert } from 'react-native';
-import { GestureHandlerRootView, PanGestureHandler, LongPressGestureHandler, GestureHandlerStateChangeEvent } from 'react-native-gesture-handler';
-import Animated, { useSharedValue, useAnimatedStyle, useAnimatedGestureHandler, withSpring } from 'react-native-reanimated';
+import {
+  View,
+  Image,
+  StyleSheet,
+  Alert,
+} from 'react-native';
+import {
+  GestureHandlerRootView,
+  PanGestureHandler,
+  LongPressGestureHandler,
+  GestureHandlerStateChangeEvent,
+} from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  useAnimatedGestureHandler,
+  withSpring,
+} from 'react-native-reanimated';
 import { ShapeType } from '../../constants/type';
 import { useCanvas } from '../context/CanvasContext';
 
@@ -12,36 +27,40 @@ interface Props {
 const HANDLE_SIZE = 20;
 
 const Shape: React.FC<Props> = ({ shape }) => {
-  const { shapes, setShapes, deleteToTrash } = useCanvas();
+  const { deleteToTrash } = useCanvas();
 
-  const offsetX = useSharedValue(shape.x);
-  const offsetY = useSharedValue(shape.y);
-  const width = useSharedValue(shape.width);
-  const height = useSharedValue(shape.height);
+  // Shared values for animation
+  const offsetX = useSharedValue(shape.position.x);
+  const offsetY = useSharedValue(shape.position.y);
+  const width = useSharedValue(shape.style.width || 100);
+  const height = useSharedValue(shape.style.height || 100);
 
+  // Drag logic
   const onDrag = useAnimatedGestureHandler({
     onActive: (event) => {
-      offsetX.value = event.translationX + shape.x;
-      offsetY.value = event.translationY + shape.y;
+      offsetX.value = shape.position.x + event.translationX;
+      offsetY.value = shape.position.y + event.translationY;
     },
     onEnd: () => {
-      shape.x = offsetX.value;
-      shape.y = offsetY.value;
+      shape.position.x = offsetX.value;
+      shape.position.y = offsetY.value;
     },
   });
 
+  // Resize logic
   const onResize = useAnimatedGestureHandler({
     onActive: (event) => {
-      width.value = Math.max(40, shape.width + event.translationX);
-      height.value = Math.max(40, shape.height + event.translationY);
+      width.value = Math.max(40, (shape.style.width || 100) + event.translationX);
+      height.value = Math.max(40, (shape.style.height || 100) + event.translationY);
     },
     onEnd: () => {
-      shape.width = width.value;
-      shape.height = height.value;
+      shape.style.width = width.value;
+      shape.style.height = height.value;
     },
   });
 
-  const style = useAnimatedStyle(() => ({
+  // Animated position and size
+  const animatedStyle = useAnimatedStyle(() => ({
     position: 'absolute',
     left: offsetX.value,
     top: offsetY.value,
@@ -49,13 +68,32 @@ const Shape: React.FC<Props> = ({ shape }) => {
     height: height.value,
   }));
 
+  // Shape rendering logic
   const renderShape = () => {
     switch (shape.type) {
       case 'rectangle':
-        return <View style={[styles.rect, { backgroundColor: shape.color || '#2196F3' }]} />;
+        return (
+          <View
+            style={[
+              styles.rect,
+              {
+                backgroundColor: shape.style.backgroundColor || '#2196F3',
+              },
+            ]}
+          />
+        );
       case 'circle':
-        return <View style={[styles.circle, { backgroundColor: shape.color || '#E91E63' }]} />;
-      case 'triangle':
+        return (
+          <View
+            style={[
+              styles.circle,
+              {
+                backgroundColor: shape.style.backgroundColor || '#E91E63',
+              },
+            ]}
+          />
+        );
+      case 'oval':
         return (
           <View
             style={{
@@ -68,39 +106,43 @@ const Shape: React.FC<Props> = ({ shape }) => {
               borderBottomWidth: 70,
               borderLeftColor: 'transparent',
               borderRightColor: 'transparent',
-              borderBottomColor: shape.color || '#4CAF50',
+              borderBottomColor: shape.style.backgroundColor || '#4CAF50',
             }}
           />
         );
       case 'image':
-        return <Image source={{ uri: shape.uri }} style={{ width: '100%', height: '100%', borderRadius: 5 }} />;
+        return (
+          <Image
+            source={{ uri: shape.uri }}
+            style={{ width: '100%', height: '100%', borderRadius: 5 }}
+            resizeMode="cover"
+          />
+        );
       default:
         return null;
     }
   };
 
-  const deleteShape = () => {
-    Alert.alert('Delete shape?', '', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          deleteToTrash(shape.id); // moves to trash
-        },
-      },
-    ]);
-  };
-
+  // Handle delete via long press
   const handleLongPress = (event: GestureHandlerStateChangeEvent) => {
     if (event.nativeEvent.state === 4) {
-      deleteShape();
+      Alert.alert('Delete shape?', '', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteToTrash(shape.id),
+        },
+      ]);
     }
   };
 
   return (
-    <LongPressGestureHandler onHandlerStateChange={handleLongPress} minDurationMs={600}>
-      <Animated.View style={[style, styles.base]}>
+    <LongPressGestureHandler
+      onHandlerStateChange={handleLongPress}
+      minDurationMs={600}
+    >
+      <Animated.View style={[animatedStyle, styles.base]}>
         <PanGestureHandler onGestureEvent={onDrag}>
           <Animated.View style={{ flex: 1 }}>{renderShape()}</Animated.View>
         </PanGestureHandler>

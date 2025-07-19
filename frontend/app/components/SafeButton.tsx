@@ -13,11 +13,6 @@ export default function SaveButton() {
     alert('Saved successfully!');
   };
 
-  return (
-    <TouchableOpacity onPress={handleSave} style={styles.button}>
-      <Text style={styles.text}>💾 Save</Text>
-    </TouchableOpacity>
-  );
 }
 
 const styles = StyleSheet.create({

@@ -14,16 +14,18 @@ const Toolbar = () => {
   const { shapes, setShapes, undo, redo, saveToHistory } = useCanvas();
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
 
-  const addShape = (type: 'rectangle' | 'circle' | 'triangle') => {
+  const addShape = (type: 'rectangle' | 'circle' | 'oval') => {
     const newShape = {
-      id: generateUUID(),
-      type,
-      x: 100,
-      y: 100,
-      width: 100,
-      height: 100,
-      color: selectedColor,
-    };
+  id: generateUUID(),
+  type,
+  position: { x: 100, y: 100 },
+  style: {
+    width: 100,
+    height: 100,
+    backgroundColor: '#3498db',
+  },
+};
+
     setShapes([...shapes, newShape]);
   };
 
@@ -45,12 +47,11 @@ const Toolbar = () => {
       const newImage: ShapeType = {
         id: generateUUID(),
         type: 'image',
-        x: 100,
-        y: 100,
-        width: 150,
+         uri: asset.uri,
+        position:{x:100,y:100},
+         style:{width: 150,
         height: 150,
-        uri: asset.uri,
-        color: 'transparent',
+        color: 'transparent'},
       };
       setShapes([...shapes, newImage]);
     }
@@ -64,7 +65,7 @@ const Toolbar = () => {
       <TouchableOpacity style={styles.button} onPress={() => addShape('circle')}>
         <Text style={styles.text}>◯</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={() => addShape('triangle')}>
+      <TouchableOpacity style={styles.button} onPress={() => addShape('oval')}>
         <Text style={styles.text}>△</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.button} onPress={pickImage}>

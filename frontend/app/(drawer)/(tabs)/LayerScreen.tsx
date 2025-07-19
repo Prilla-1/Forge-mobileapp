@@ -1,10 +1,19 @@
-// app/(drawer)/(tabs)/LayerScreen.tsx
-import React, { useContext } from 'react';
+
+import React from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
-import CanvasContext from '../../context/CanvasContext';
+import { useCanvas } from '../../context/CanvasContext';
+import { ShapeType } from '../../../constants/type';
 
 export default function LayerScreen() {
-  const { shapes } = useContext(CanvasContext);
+  const { shapes } = useCanvas();
+
+  const renderItem = ({ item, index }: { item: ShapeType; index: number }) => (
+    <View style={styles.item}>
+      <Text style={styles.label}>
+        {index + 1}. {item.type} {item.color ? `(${item.color})` : ''}
+      </Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -15,13 +24,7 @@ export default function LayerScreen() {
         <FlatList
           data={shapes}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
-            <View style={styles.item}>
-              <Text style={styles.label}>
-                {index + 1}. {item.type} ({item.color})
-              </Text>
-            </View>
-          )}
+          renderItem={renderItem}
         />
       )}
     </View>
@@ -29,8 +32,16 @@ export default function LayerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '600',
+    marginBottom: 20,
+  },
   item: {
     padding: 12,
     borderBottomWidth: 1,
@@ -38,9 +49,11 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
+    color: '#333',
   },
   empty: {
     fontSize: 16,
     color: '#888',
+    textAlign: 'center',
   },
 });
