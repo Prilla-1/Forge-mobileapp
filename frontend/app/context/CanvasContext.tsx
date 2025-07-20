@@ -1,11 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  ReactNode,
-  Dispatch,
-  SetStateAction,
-} from 'react';
+import React, {createContext, useContext, useState, ReactNode, Dispatch,SetStateAction,} from 'react';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -61,7 +54,148 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [trash, setTrash] = useState<ShapeType[]>([]);
   const [popupShapeId, setPopupShapeId] = useState<string | null>(null);
 
-  const addShape = (shape: ShapeType) => setShapes(prev => [...prev, shape]);
+  const addShape = (shape: ShapeType) => {
+    saveToHistory([...shapes, shape]);
+  };
+
+  const saveToHistory = (newShapes: ShapeType[]) => {
+    setHistory(prev => [...prev, shapes]);
+    setRedoStack([]);
+    setShapes(newShapes);
+  };
+
+  const deleteShape = (id: string) => {
+    setShapes(prev => prev.filter(shape => shape.id !== id));
+  };
+
+  const updateShape = (id: string, updates: Partial<ShapeType>) => {
+    setShapes(prev =>
+      prev.map(s => (s.id === id ? { ...s, ...updates } : s))
+    );
+  };
+
+  const updateShapeStyle = (id: string, newStyle: Partial<ShapeType['style']>) => {
+    setShapes(prev =>
+      prev.map(shape =>
+        shape.id === id
+          ? { ...shape, style: { ...shape.style, ...newStyle } }
+          : shape
+      )
+    );
+  };
+
+  const undo = () => {
+    if (history.length === 0) return;
+    const previous = history[history.length - 1];
+    setHistory(prev => prev.slice(0, -1));
+    setRedoStack(r => [...r, shapes]);
+    setShapes(previous);
+  };
+
+  const redo = () => {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setRedoStack(r => r.slice(0, -1));
+    setHistory(prev => [...prev, shapes]);
+    setShapes(next);
+  };
+
+  const deleteShapeById = (id: string) => {
+    setShapes(prev => {
+      const shapeToDelete = prev.find(s => s.id === id);
+      if (shapeToDelete) {
+        setDeletedShapes(deleted => [...deleted, shapeToDelete]);
+      }
+      return prev.filter(s => s.id !== id);
+    });
+  };
+
+  const deleteToTrash = (id: string) => {
+    setShapes(prev => {
+      const shape = prev.find(s => s.id === id);
+      if (shape) {
+        setTrash(old => [...old, shape]);
+      }
+      return prev.filter(s => s.id !== id);
+    });
+  };
+
+  const restoreShape = (id: string) => {
+    setDeletedShapes(prev => {
+      const shape = prev.find(s => s.id === id);
+      if (shape) {
+        setShapes(shapes => [...shapes, shape]);
+      }
+      return prev.filter(s => s.id !== id);
+    });
+  };
+
+  const restoreShapeFromTrash = (id: string) => {
+    setTrash(prev => {
+      const shape = prev.find(s => s.id === id);
+      if (shape) {
+        setShapes(old => [...old, shape]);
+      }
+      return prev.filter(s => s.id !== id);
+    });
+  };
+
+  const addImageFromGallery = async () => {
+    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!granted) return Alert.alert('Permission Denied');
+
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+
+    if (!res.canceled && res.assets.length) {
+      const img = res.assets[0];
+      const newShape: ShapeType = {
+        id: generateUUID(),
+        type: 'image',
+        uri: img.uri,
+        position: { x: 100, y: 100 },
+        style: { width: 150, height: 150 },
+      };
+      saveToHistory([...shapes, newShape]);
+    }
+  };
+
+  const addTextShape = () => {
+    const newShape: ShapeType = {
+      id: generateUUID(),
+      type: 'text',
+      position: { x: 100, y: 100 },
+      style: {
+        width: 150,
+        height: 60,
+        backgroundColor: 'transparent',
+        borderColor: '#000',
+        borderWidth: 1,
+      },
+      text: 'Edit Me',
+      fontSize: 18,
+      fontColor: '#000000',
+    };
+    saveToHistory([...shapes, newShape]);
+  };
+
+  const selectShape = (id: string | null) => {
+    setSelectedShapeId(id);
+  };
+
+  const saveToStorage = async () => {
+    try {
+      await AsyncStorage.setItem('shapes', JSON.stringify(shapes));
+    } catch (error) {
+      console.error('Error saving shapes:', error);
+    }
+  };
+
+  const saveToMirror = () => {
+    setMirrorDesign([...shapes]);
+  };
 
   const initialTemplates: ShapeType[][] = [
     [
@@ -88,16 +222,7 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       },
     ],
   ];
-
   const [templates] = useState<ShapeType[][]>(initialTemplates);
-
-  const saveToStorage = async () => {
-    try {
-      await AsyncStorage.setItem('shapes', JSON.stringify(shapes));
-    } catch (error) {
-      console.error('Error saving shapes:', error);
-    }
-  };
 
   const loadTemplate = (index: number) => {
     const cloned = templates[index].map((shape) => ({
@@ -106,133 +231,6 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }));
     setShapes(cloned);
     saveToHistory(cloned);
-  };
-
-  const saveToMirror = () => {
-    setMirrorDesign([...shapes]);
-  };
-
-  const deleteShape = (id: string) => {
-    setShapes((prev) => prev.filter((shape) => shape.id !== id));
-
-
-  const saveToHistory = (newShapes: ShapeType[]) => {
-    setHistory((prev) => [...prev, shapes]);
-    setRedoStack([]);
-    setShapes(newShapes);
-  };
-
- const updateShape = (id: string, updates: Partial<ShapeType>) => {
-  setShapes((prev) =>
-    prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
-  );
-};
-
-
-  const updateShapeStyle = (id: string, newStyle: Partial<ShapeType['style']>) => {
-    setShapes((prev) =>
-      prev.map((shape) =>
-        shape.id === id
-          ? { ...shape, style: { ...shape.style, ...newStyle } }
-          : shape
-      )
-    );
-  };
-
-  const undo = () => {
-    if (history.length === 0) return;
-    const previous = history[history.length - 1];
-    setHistory((prev) => prev.slice(0, -1));
-    setRedoStack((r) => [...r, shapes]);
-    setShapes(previous);
-  };
-
-  const redo = () => {
-    if (redoStack.length === 0) return;
-    const next = redoStack[redoStack.length - 1];
-    setRedoStack((r) => r.slice(0, -1));
-    setHistory((prev) => [...prev, shapes]);
-    setShapes(next);
-  };
-
-  const deleteShapeById = (id: string) => {
-    setShapes((prev) => {
-      const shapeToDelete = prev.find((s) => s.id === id);
-      if (shapeToDelete) {
-        setDeletedShapes((deleted) => [...deleted, shapeToDelete]);
-      }
-      return prev.filter((s) => s.id !== id);
-    });
-  };
-const deleteToTrash = (id: string) => {
-  setShapes(prev => {
-    const shape = prev.find(s => s.id === id);
-    if (shape) {
-      setTrash(old => [...old, shape]);
-    }
-    return prev.filter(s => s.id !== id);
-  });
-};
-const restoreShape = (id: string) => {
-  setDeletedShapes(prev => {
-    const shape = prev.find(s => s.id === id);
-    if (shape) {
-      setShapes(shapes => [...shapes, shape]);
-    }
-    return prev.filter(s => s.id !== id);
-  });
-};
-
-  
-const restoreShapeFromTrash = (id: string) => {
-  setTrash(prev => {
-    const shape = prev.find(s => s.id === id);
-    if (shape) {
-      setShapes(old => [...old, shape]);
-    }
-    return prev.filter(s => s.id !== id);
-  });
-};
-
-  const addImageFromGallery = async () => {
-  const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!granted) return Alert.alert('Permission Denied');
-  const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images });
-  if (!res.canceled && res.assets.length) {
-    const img = res.assets[0];
-    saveToHistory([
-      ...shapes,
-      {
-        id: generateUUID(),
-        type: 'image',
-        uri: img.uri,
-        position: { x: 100, y: 100 },
-        style: { width: 150, height: 150 },
-      },
-    ]);
-  }
-};
-  const addTextShape = () => {
-    const newShape: ShapeType = {
-      id: generateUUID(),
-      type: 'text',
-      position: { x: 100, y: 100 },
-      style: {
-        width: 150,
-        height: 60,
-        backgroundColor: 'transparent',
-        borderColor: '#000',
-        borderWidth: 1,
-      },
-      text: 'Edit Me',
-      fontSize: 18,
-      fontColor: '#000000',
-    };
-    saveToHistory([...shapes, newShape]);
-  };
-
-  const selectShape = (id: string | null) => {
-    setSelectedShapeId(id);
   };
 
   return (
@@ -248,8 +246,6 @@ const restoreShapeFromTrash = (id: string) => {
         setSelectedShapeId,
         undo,
         redo,
-        deleteShape,
-        saveToStorage,
         saveToHistory,
         deleteShapeById,
         addShape,
@@ -257,6 +253,8 @@ const restoreShapeFromTrash = (id: string) => {
         updateShape,
         setDeletedShapes,
         deletedShapes,
+        saveToStorage,
+        deleteShape,
         loadTemplate,
         saveToMirror,
         mirrorDesign,
@@ -280,7 +278,7 @@ const restoreShapeFromTrash = (id: string) => {
 export const useCanvas = (): CanvasContextType => {
   const context = useContext(CanvasContext);
   if (!context) {
-    throw new Error('useCanvas must be used within CanvasProvider');
+    throw new Error('useCanvas must be used within a CanvasProvider');
   }
   return context;
 };

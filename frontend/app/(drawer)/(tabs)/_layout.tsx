@@ -14,7 +14,7 @@ export default function TabsLayout() {
         headerLeft: () => null,
         headerRight: () =>
           route.name !== 'mirror' ? (
-            <TouchableOpacity onPress={() => router.push('/search')} style={{ marginRight: 16 }}>
+            <TouchableOpacity onPress={() => router.push('/components/search')} style={{ marginRight: 16 }}>
               <Ionicons name="search-outline" size={24} color="#000" />
             </TouchableOpacity>
           ) : null,
@@ -30,10 +30,10 @@ export default function TabsLayout() {
           return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
-    >
+    > 
       <Tabs.Screen name="mirror" options={{ headerShown: false, title: 'Mirror' }} />
       <Tabs.Screen name="ToolsScreen" options={{ title: 'Tools' }} />
-      <Tabs.Screen name="CanvasScreen" options={{ title: 'Canvas' }} />
+     <Tabs.Screen name="CanvasScreen" options={{ title: 'Canvas' }} />
       <Tabs.Screen name="LayerScreen" options={{ title: 'Layers' }} />
       <Tabs.Screen name="Templates" options={{ title: 'Templates' }} />
     </Tabs>

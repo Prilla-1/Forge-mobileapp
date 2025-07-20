@@ -8,11 +8,16 @@ export default function SaveButton() {
   const { shapes } = useCanvas();
 
   const handleSave = async () => {
-    await saveShapes(shapes);       // local
-    await saveToBackend(shapes);    // backend
+    await saveShapes(shapes);       // Save locally
+    await saveToBackend(shapes);    // Save to backend
     alert('Saved successfully!');
   };
 
+  return (
+    <TouchableOpacity style={styles.button} onPress={handleSave}>
+      <Text style={styles.text}>💾 Save</Text>
+    </TouchableOpacity>
+  );
 }
 
 const styles = StyleSheet.create({

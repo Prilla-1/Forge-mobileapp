@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Modal,
   StyleSheet,
-  FlatList
+  FlatList,
 } from 'react-native';
 import { useCanvas } from '../context/CanvasContext';
 import { ShapeType } from '../../constants/type';
@@ -37,6 +37,8 @@ const Canvas = () => {
       setInputText(selectedShape.text || '');
       setFontSize(selectedShape.style?.fontSize || 16);
       setFontColor(selectedShape.style?.color || 'black');
+      setBold(selectedShape.style?.fontWeight === 'bold');
+      setItalic(selectedShape.style?.fontStyle === 'italic');
     }
   }, [selectedShapeId]);
 
@@ -79,10 +81,10 @@ const Canvas = () => {
         >
           <Text
             style={{
-              fontSize: shape.style.fontSize || 16,
-              color: shape.style.color || 'black',
-              fontWeight: shape.style.fontWeight || 'normal',
-              fontStyle: shape.style.fontStyle || 'normal',
+              fontSize: shape.style?.fontSize || 16,
+              color: shape.style?.color || 'black',
+              fontWeight: shape.style?.fontWeight || 'normal',
+              fontStyle: shape.style?.fontStyle || 'normal',
             }}
           >
             {shape.text}
@@ -98,9 +100,9 @@ const Canvas = () => {
         style={[
           styles.shape,
           {
-            backgroundColor: shape.style.backgroundColor || '#ccc',
-            width: shape.style.width || 100,
-            height: shape.style.height || 100,
+            backgroundColor: shape.style?.backgroundColor || '#ccc',
+            width: shape.style?.width || 100,
+            height: shape.style?.height || 100,
             top: shape.position.y,
             left: shape.position.x,
             position: 'absolute',
@@ -157,14 +159,10 @@ const Canvas = () => {
 
               <View style={styles.formatButtons}>
                 <TouchableOpacity onPress={() => setBold(!bold)}>
-                  <Text style={{ fontWeight: bold ? 'bold' : 'normal' }}>
-                    B
-                  </Text>
+                  <Text style={{ fontWeight: bold ? 'bold' : 'normal' }}>B</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setItalic(!italic)}>
-                  <Text style={{ fontStyle: italic ? 'italic' : 'normal' }}>
-                    I
-                  </Text>
+                  <Text style={{ fontStyle: italic ? 'italic' : 'normal' }}>I</Text>
                 </TouchableOpacity>
               </View>
 

@@ -1,16 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  Modal,
-  Text,
-} from 'react-native';
+import { View,StyleSheet,TouchableOpacity,TextInput,Modal,Text,} from 'react-native';
 import Canvas from '../../components/Canvas';
 import { Ionicons } from '@expo/vector-icons';
 import { useCanvas } from '../../context/CanvasContext';
 import { useRouter } from 'expo-router';
+import DraggableShape from '../../components/DraggableShape';
 
 export default function CanvasScreen() {
   const router = useRouter();
@@ -32,7 +26,6 @@ export default function CanvasScreen() {
 
   const isText = selectedShape?.type === 'text';
 
-  // Sync text input when selection changes
   useEffect(() => {
     if (isText && selectedShape?.text) {
       setTextInput(selectedShape.text);
@@ -47,21 +40,21 @@ export default function CanvasScreen() {
       updateShape(selectedShapeId, { text });
     }
   };
-  const handleAddButton = () => {
-  addShape({
-    id: Date.now().toString(),
-    type: 'button',
-    position: { x: 150, y: 150 },
-    style: {
-      fontSize: 16,
-      color: 'white',
-      backgroundColor: '#3498db',
-      fontFamily: 'System',
-    },
-    text: 'Click Me',
-  });
-};
 
+  const handleAddButton = () => {
+    addShape({
+      id: Date.now().toString(),
+      type: 'button',
+      position: { x: 150, y: 150 },
+      style: {
+        fontSize: 16,
+        color: 'white',
+        backgroundColor: '#3498db',
+        fontFamily: 'System',
+      },
+      text: 'Click Me',
+    });
+  };
 
   const toggleBold = () => {
     if (!selectedShapeId || selectedShape?.type !== 'text') return;
@@ -125,7 +118,6 @@ export default function CanvasScreen() {
     <View style={styles.container}>
       <Canvas />
 
-      {/*  Floating Formatting Toolbar (Text Only) */}
       {isText && (
         <View style={styles.formattingBar}>
           <TouchableOpacity onPress={toggleBold}>
@@ -143,26 +135,13 @@ export default function CanvasScreen() {
           <TouchableOpacity onPress={() => setFontColorModal(true)}>
             <Ionicons name="color-palette" size={24} color="black" />
           </TouchableOpacity>
-   
-
         </View>
       )}
 
-      {/* ✏️ Inline Text Editor */}
-      {isText && (
-        <TextInput
-          style={styles.inlineInput}
-          value={textInput}
-          onChangeText={handleTextChange}
-          placeholder="Edit text"
-        />
-      )}
-
-      {/* 🎨 Color Picker Modal */}
       <Modal visible={fontColorModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.colorPicker}>
-            {['black', 'red', 'blue', 'green', 'purple'].map((color) => (
+            {['black', 'red', 'blue', 'green', 'purple', 'gold'].map((color) => (
               <TouchableOpacity
                 key={color}
                 style={[styles.colorBox, { backgroundColor: color }]}
@@ -170,55 +149,43 @@ export default function CanvasScreen() {
               />
             ))}
             <TouchableOpacity onPress={() => setFontColorModal(false)}>
-              <Text style={{ marginTop: 10, color: 'blue' }}>Cancel</Text>
+              <Text style={{ marginTop: 10 }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* 🛠️ Bottom Toolbar */}
       <View style={styles.bottomToolbar}>
         <TouchableOpacity onPress={undo}>
           <Ionicons name="arrow-undo" size={28} color="black" />
         </TouchableOpacity>
-
         <TouchableOpacity onPress={redo}>
           <Ionicons name="arrow-redo-sharp" size={28} color="black" />
         </TouchableOpacity>
-
         <TouchableOpacity onPress={handleAddText}>
           <Ionicons name="text" size={28} color="black" />
         </TouchableOpacity>
-
         <TouchableOpacity onPress={() => router.push('/(drawer)/(tabs)/Templates')}>
           <Ionicons name="albums-outline" size={28} color="black" />
         </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => {
-            saveToMirror();
-            router.push('/mirror');
-          }}
-        >
+        <TouchableOpacity onPress={() => {
+          saveToMirror();
+          router.push('/mirror');
+        }}>
           <Ionicons name="eye" size={28} color="black" />
         </TouchableOpacity>
-               <TouchableOpacity onPress={handleAddButton}>
-  <Ionicons name="radio-button-on" size={28} color="black" />
-</TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => {
-            saveToMirror();
-            router.push('/(drawer)/(tabs)/mirror');
-          }}
-        >
+        <TouchableOpacity onPress={handleAddButton}>
+          <Ionicons name="radio-button-on" size={28} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => {
+          saveToMirror();
+          router.push('/(drawer)/(tabs)/mirror');
+        }}>
           <Ionicons name="save-outline" size={28} color="black" />
         </TouchableOpacity>
-
         <TouchableOpacity onPress={() => router.push('/trash')}>
           <Ionicons name="trash-outline" size={28} color="black" />
         </TouchableOpacity>
-
         {selectedShapeId && (
           <TouchableOpacity onPress={() => deleteToTrash(selectedShapeId)}>
             <Ionicons name="close-circle" size={28} color="black" />
@@ -261,18 +228,6 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#f0f0f0',
     borderRadius: 10,
-    zIndex: 999,
-  },
-  inlineInput: {
-    position: 'absolute',
-    top: 100,
-    left: 20,
-    right: 20,
-    backgroundColor: 'white',
-    borderColor: 'gray',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
     zIndex: 999,
   },
   modalOverlay: {
