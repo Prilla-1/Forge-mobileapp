@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useCanvas } from '../context/CanvasContext';
 import { ShapeType } from '../../constants/type';
 
@@ -13,7 +13,15 @@ const TrashScreen = () => {
       </Text>
 
       {item.type === 'text' && item.text ? (
-        <Text style={styles.shapeText}>{item.text}</Text>
+        <Text style={[styles.shapeText, { fontSize: item.style?.fontSize || 14, color: item.style?.color || '#000' }]}>
+          {item.text}
+        </Text>
+      ) : item.type === 'image' && item.uri ? (
+        <Image
+          source={{ uri: item.uri }}
+          style={{ width: 100, height: 100, borderRadius: 8, marginBottom: 8 }}
+          resizeMode="contain"
+        />
       ) : (
         <Text style={styles.preview}>Preview: {item.type}</Text>
       )}

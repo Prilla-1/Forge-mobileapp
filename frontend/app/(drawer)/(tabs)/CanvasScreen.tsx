@@ -1,10 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { View,StyleSheet,TouchableOpacity,TextInput,Modal,Text,} from 'react-native';
+import React, { useState, useEffect, useRef, RefObject } from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Modal,
+  Text,
+} from 'react-native';
 import Canvas from '../../components/Canvas';
 import { Ionicons } from '@expo/vector-icons';
 import { useCanvas } from '../../context/CanvasContext';
 import { useRouter } from 'expo-router';
-import DraggableShape from '../../components/DraggableShape';
+import ViewShot from 'react-native-view-shot';
 
 export default function CanvasScreen() {
   const router = useRouter();
@@ -12,15 +19,29 @@ export default function CanvasScreen() {
     saveToMirror,
     undo,
     redo,
-    saveToStorage,
-    selectedShapeId,
+    selectedShapeIds,
+    setSelectedShapeIds,
+    selectedShapes,
     updateShape,
     deleteToTrash,
     addShape,
     shapes,
+    saveCanvas,
+    loadCanvas,
+    groupShapes,
+    ungroupShapes,
+    bringToFront,
+    sendToBack,
+    bringForward,
+    sendBackward,
+    deselectAllShapes,
   } = useCanvas();
 
-  const selectedShape = shapes.find((s) => s.id === selectedShapeId);
+  const canvasRef = useRef<ViewShot | null>(null);
+
+  const selectedShape = selectedShapes[0];
+  const selectedShapeId = selectedShapeIds[0] || null;
+
   const [fontColorModal, setFontColorModal] = useState(false);
   const [textInput, setTextInput] = useState('');
 
@@ -116,7 +137,7 @@ export default function CanvasScreen() {
 
   return (
     <View style={styles.container}>
-      <Canvas />
+      <Canvas canvasRef={canvasRef as RefObject<ViewShot | null>} />
 
       {isText && (
         <View style={styles.formattingBar}>
@@ -165,23 +186,48 @@ export default function CanvasScreen() {
         <TouchableOpacity onPress={handleAddText}>
           <Ionicons name="text" size={28} color="black" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/(drawer)/(tabs)/Templates')}>
-          <Ionicons name="albums-outline" size={28} color="black" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => {
-          saveToMirror();
-          router.push('/mirror');
-        }}>
-          <Ionicons name="eye" size={28} color="black" />
-        </TouchableOpacity>
         <TouchableOpacity onPress={handleAddButton}>
           <Ionicons name="radio-button-on" size={28} color="black" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => {
-          saveToMirror();
-          router.push('/(drawer)/(tabs)/mirror');
-        }}>
-          <Ionicons name="save-outline" size={28} color="black" />
+
+        {/* Z-Index Layer Controls */}
+        <TouchableOpacity onPress={bringForward}>
+          <Ionicons name="chevron-up-outline" size={24} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={sendBackward}>
+          <Ionicons name="chevron-down-outline" size={24} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={bringToFront}>
+          <Ionicons name="arrow-up-outline" size={24} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={sendToBack}>
+          <Ionicons name="arrow-down-outline" size={24} color="black" />
+        </TouchableOpacity>
+
+        {/* Group/Ungroup */}
+        <TouchableOpacity onPress={groupShapes}>
+          <Ionicons name="git-merge-outline" size={24} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={ungroupShapes}>
+          <Ionicons name="git-branch-outline" size={24} color="black" />
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => router.push('/(drawer)/(tabs)/Templates')}>
+          <Ionicons name="albums-outline" size={28} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            saveToMirror();
+            router.push('/mirror');
+          }}
+        >
+          <Ionicons name="eye" size={28} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={saveCanvas}>
+          <Ionicons name="save-outline" size={24} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={loadCanvas}>
+          <Ionicons name="download-outline" size={24} color="black" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.push('/trash')}>
           <Ionicons name="trash-outline" size={28} color="black" />
@@ -206,6 +252,7 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 12,

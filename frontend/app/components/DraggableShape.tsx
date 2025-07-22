@@ -1,169 +1,283 @@
-import React from 'react';
-import { Image, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  Text,
+  Image,
+  TextInput,
+  TouchableOpacity,
+} from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   runOnJS,
+  withSpring,
 } from 'react-native-reanimated';
 import { useCanvas } from '../context/CanvasContext';
 import { ShapeType } from '../../constants/type';
+import PopupMenu from './PopupToolbar';
 
-type DraggableShapeProps = {
-  shape: ShapeType;
-  onLongPress: (params: { id: string; x: number; y: number }) => void;
-};
+const DraggableShape = ({ shape, onLongPress }: any) => {
+  const {
+    updateShape,
+    selectedShapeId,
+    setSelectedShapeId,
+    popupShapeId,
+    setPopupShapeId,
+  } = useCanvas();
 
-const HANDLE_SIZE = 20;
-const MIN_SIZE = 40;
+  const [isEditingText, setIsEditingText] = useState(false);
 
-const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress }) => {
-  const { updateShape,selectedShapeId,setSelectedShapeId } = useCanvas();
   const isSelected = selectedShapeId === shape.id;
 
-  const translateX = useSharedValue(shape.position.x);
-  const translateY = useSharedValue(shape.position.y);
-  const resizeWidth = useSharedValue(shape.style.width || 100);
-  const resizeHeight = useSharedValue(shape.style.height || 100);
+  const width = useSharedValue(shape?.style?.width ?? 100);
+  const height = useSharedValue(shape?.style?.height ?? 100);
 
-  const baseStyle = {
-    backgroundColor: shape.style?.backgroundColor || shape.color || '#ccc',
-    borderRadius: shape.type === 'circle' ? 999 : shape.type === 'oval' ? 50 : 0,
-  };
+  useEffect(() => {
+    width.value = shape.style?.width ?? 100;
+    height.value = shape.style?.height ?? 100;
+  }, []);
 
-  const updatePositionAndSize = () => {
-    runOnJS(updateShape)(shape.id, {
-      position: { x: translateX.value, y: translateY.value },
-      style: { width: resizeWidth.value, height: resizeHeight.value },
-    });
-  };
+  const offsetX = useSharedValue(shape?.position?.x ?? 0);
+  const offsetY = useSharedValue(shape?.position?.y ?? 0);
+  const rotation = useSharedValue(shape.rotation || 0);
 
-  const createResizeGesture = (dx: number, dy: number, anchor: 'tl' | 'tr' | 'bl' | 'br' | 't' | 'b' | 'l' | 'r') =>
-    Gesture.Pan()
-      .onUpdate((event) => {
-        let newWidth = resizeWidth.value;
-        let newHeight = resizeHeight.value;
-        let newX = translateX.value;
-        let newY = translateY.value;
+  const resizeHandleSize = 10;
 
-        if (anchor.includes('l')) {
-          newWidth = resizeWidth.value - event.translationX;
-          newX = shape.position.x + event.translationX;
-        } else if (anchor.includes('r')) {
-          newWidth = resizeWidth.value + event.translationX;
-        }
+  const createResizeGesture = (xFactor: number, yFactor: number, adjustX: boolean, adjustY: boolean) => {
+    return Gesture.Pan()
+      .onUpdate((e) => {
+        const deltaX = e.translationX * xFactor;
+        const deltaY = e.translationY * yFactor;
 
-        if (anchor.includes('t')) {
-          newHeight = resizeHeight.value - event.translationY;
-          newY = shape.position.y + event.translationY;
-        } else if (anchor.includes('b')) {
-          newHeight = resizeHeight.value + event.translationY;
-        }
+        width.value = Math.max(30, shape.style?.width + deltaX);
+        height.value = Math.max(30, shape.style?.height + deltaY);
 
-        resizeWidth.value = Math.max(MIN_SIZE, newWidth);
-        resizeHeight.value = Math.max(MIN_SIZE, newHeight);
-        translateX.value = newX;
-        translateY.value = newY;
+        if (adjustX) offsetX.value = withSpring(offsetX.value + e.translationX);
+        if (adjustY) offsetY.value = withSpring(offsetY.value + e.translationY);
       })
-      .onEnd(updatePositionAndSize);
+      .onEnd(() => {
+        runOnJS(updateShape)(shape.id, {
+          position: {
+            x: offsetX.value,
+            y: offsetY.value,
+          },
+          style: {
+            ...shape.style,
+            width: width.value,
+            height: height.value,
+          },
+        });
+      });
+  };
+
+  const gesture = Gesture.Pan()
+    .onStart(() => {
+      runOnJS(setSelectedShapeId)(shape.id);
+    })
+    .onUpdate((e) => {
+      offsetX.value = withSpring(e.translationX + (shape.position?.x ?? 0));
+      offsetY.value = withSpring(e.translationY + (shape.position?.y ?? 0));
+    })
+    .onEnd(() => {
+      runOnJS(updateShape)(shape.id, {
+        position: {
+          x: offsetX.value,
+          y: offsetY.value,
+        },
+      });
+    });
+
+  const rotateGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      rotation.value += e.translationX * 0.5;
+    })
+    .onEnd(() => {
+      runOnJS(updateShape)(shape.id, {
+        rotation: rotation.value,
+      });
+    });
 
   const animatedStyle = useAnimatedStyle(() => ({
-    position: 'absolute',
-    left: translateX.value,
-    top: translateY.value,
-    width: resizeWidth.value,
-    height: resizeHeight.value,
+    transform: [
+      { translateX: offsetX.value },
+      { translateY: offsetY.value },
+      { rotateZ: `${rotation.value}deg` },
+    ],
   }));
 
-  const handleAnimatedStyle = (x: 'left' | 'center' | 'right', y: 'top' | 'center' | 'bottom') =>
-    useAnimatedStyle(() => {
-      const style: any = {
-        position: 'absolute',
-        width: HANDLE_SIZE,
-        height: HANDLE_SIZE,
-        backgroundColor: '#000',
-        borderRadius: 10,
-        zIndex: 10,
-      };
+  const animatedSizeStyle = useAnimatedStyle(() => ({
+    width: width.value,
+    height: height.value,
+  }));
 
-      if (x === 'left') style.left = -HANDLE_SIZE / 2;
-      if (x === 'center') style.left = (resizeWidth.value - HANDLE_SIZE) / 2;
-      if (x === 'right') style.left = resizeWidth.value - HANDLE_SIZE / 2;
+  const baseStyle = {
+    width: shape.style?.width ?? 100,
+    height: shape.style?.height ?? 100,
+    borderColor: 'blue',
+    borderWidth: isSelected && shape.type !== 'text' ? 1 : 0,
+    borderRadius:
+      shape.type === 'circle'
+        ? width.value / 2
+        : shape.type === 'oval'
+        ? height.value / 2
+        : 0,
+  };
 
-      if (y === 'top') style.top = -HANDLE_SIZE / 2;
-      if (y === 'center') style.top = (resizeHeight.value - HANDLE_SIZE) / 2;
-      if (y === 'bottom') style.top = resizeHeight.value - HANDLE_SIZE / 2;
-
-      return style;
-    });
-
-  const longPressGesture = Gesture.LongPress()
-    .onStart((event) => {
-      runOnJS(onLongPress)({
-        id: shape.id,
-        x: event.absoluteX,
-        y: event.absoluteY,
-      });
-    })
-    .minDuration(300);
-
-  const panGesture = Gesture.Pan()
-  .onBegin(() => {
-  runOnJS(setSelectedShapeId)(shape.id);
-})
-
-    .onUpdate((event) => {
-      translateX.value = withSpring(event.translationX + shape.position.x);
-      translateY.value = withSpring(event.translationY + shape.position.y);
-    })
-    .onEnd(updatePositionAndSize);
+  const handleLongPress = () => {
+    setSelectedShapeId(shape.id);
+    setPopupShapeId(shape.id);
+    if (onLongPress) onLongPress(shape.id);
+  };
 
   return (
-    <GestureDetector gesture={Gesture.Simultaneous(panGesture, longPressGesture)}>
-      <Animated.View style={[animatedStyle, baseStyle, styles.shape,isSelected && styles.selectedBorder]}>
-        {shape.type === 'image' && shape.uri && (
-          <Image source={{ uri: shape.uri }} style={{ width: '100%', height: '100%', borderRadius: 8 }} resizeMode="cover" />
-        )}
-        {shape.type === 'text' && (
-          <Text style={{ color: shape.style?.color || '#000', fontSize: shape.fontSize || 16 }}>
-            {shape.text || 'Sample'}
-          </Text>
-        )}
+    <GestureDetector gesture={gesture}>
+      <Animated.View style={[styles.shapeContainer, animatedStyle]}>
+        <TouchableOpacity
+          onLongPress={handleLongPress}
+          activeOpacity={1}
+          style={[styles.touchable, baseStyle, animatedSizeStyle]}
+        >
+          {shape.type === 'text' && (
+            <View style={{ alignItems: 'center' }}>
+              <TextInput
+                style={[
+                  styles.text,
+                  shape.style,
+                  isEditingText && { borderWidth: 1, borderColor: 'gray', borderRadius: 4 },
+                ]}
+                value={shape.text}
+                onChangeText={(text) => updateShape(shape.id, { text })}
+               onFocus={() => {
+                      setIsEditingText(true);
+                      setSelectedShapeId(shape.id);
+                      setPopupShapeId(shape.id);}}
+                onBlur={() => setIsEditingText(false)}
+                multiline
+              />
+              {isEditingText && (
+                <TouchableOpacity
+                  onPress={() => setIsEditingText(false)}
+                  style={styles.doneButton}
+                >
+                  <Text style={{ color: 'white' }}>Done</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
 
-        {/* 8 Resize Handles */}
-        {isSelected && [
-          { pos: ['left', 'top'], anchor: 'tl' },
-          { pos: ['right', 'top'], anchor: 'tr' },
-          { pos: ['left', 'bottom'], anchor: 'bl' },
-          { pos: ['right', 'bottom'], anchor: 'br' },
-          { pos: ['center', 'top'], anchor: 't' },
-          { pos: ['center', 'bottom'], anchor: 'b' },
-          { pos: ['left', 'center'], anchor: 'l' },
-          { pos: ['right', 'center'], anchor: 'r' },
-        ].map(({ pos, anchor }) => (
-          <GestureDetector key={anchor} gesture={createResizeGesture(0, 0, anchor as any)}>
-            <Animated.View style={handleAnimatedStyle(pos[0] as any, pos[1] as any)} />
-          </GestureDetector>
-        ))}
+          {shape.type === 'image' && shape.uri && (
+            <Image
+              source={{ uri: shape.uri }}
+              style={[StyleSheet.absoluteFillObject, shape.style]}
+            />
+          )}
+
+          {shape.type !== 'text' && shape.type !== 'image' && (
+            <Animated.View
+    style={[
+      styles.genericShape,
+      {
+        width: width.value,
+        height: height.value,
+        backgroundColor: shape.style?.backgroundColor || 'skyblue',
+        borderRadius:
+          shape.type === 'circle'
+            ? Math.min(width.value, height.value) / 2
+            : shape.type === 'oval'
+            ? Math.min(width.value, height.value) / 2
+            : 0,
+      },
+    ]}
+  />
+)}
+
+          {isSelected && (
+            <>
+              {/* Rotate Handle */}
+              <GestureDetector gesture={rotateGesture}>
+                <View
+                  style={[
+                    styles.rotateHandle,
+                    {
+                      top: -30,
+                      left: (shape.style?.width ?? 100) / 2 - 10,
+                    },
+                  ]}
+                />
+              </GestureDetector>
+
+              {/* Resize Handles */}
+              <GestureDetector gesture={createResizeGesture(-1, -1, true, true)}>
+                <Animated.View style={[styles.resizeHandle, { top: -resizeHandleSize / 2, left: -resizeHandleSize / 2 }]} />
+              </GestureDetector>
+              <GestureDetector gesture={createResizeGesture(1, -1, false, true)}>
+                <Animated.View style={[styles.resizeHandle, { top: -resizeHandleSize / 2, right: -resizeHandleSize / 2 }]} />
+              </GestureDetector>
+              <GestureDetector gesture={createResizeGesture(-1, 1, true, false)}>
+                <Animated.View style={[styles.resizeHandle, { bottom: -resizeHandleSize / 2, left: -resizeHandleSize / 2 }]} />
+              </GestureDetector>
+              <GestureDetector gesture={createResizeGesture(1, 1, false, false)}>
+                <Animated.View style={[styles.resizeHandle, { bottom: -resizeHandleSize / 2, right: -resizeHandleSize / 2 }]} />
+              </GestureDetector>
+            </>
+          )}
+
+          {/* Popup Menu */}
+          {popupShapeId === shape.id && (
+            <PopupMenu
+              shapeId={shape.id}
+              shapeType={shape.type}
+              onRequestClose={() => setPopupShapeId(null)}
+            />
+          )}
+        </TouchableOpacity>
       </Animated.View>
     </GestureDetector>
   );
 };
 
+export default DraggableShape;
+
 const styles = StyleSheet.create({
-  shape: {
+  shapeContainer: {
+    position: 'absolute',
+  },
+  touchable: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#333',
   },
-  selectedBorder: {
-  borderWidth: 1,
-  borderColor: '#888',
-  borderStyle: 'dashed',
-},
-
+  genericShape: {
+    backgroundColor: 'skyblue',
+    flex: 1,
+    alignSelf: 'stretch',
+  },
+  text: {
+    fontSize: 18,
+    padding: 4,
+    color: 'black',
+  },
+  resizeHandle: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    backgroundColor: 'gray',
+    borderRadius: 5,
+  },
+  rotateHandle: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    backgroundColor: 'green',
+    borderRadius: 10,
+  },
+  doneButton: {
+    marginTop: 4,
+    backgroundColor: 'black',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
 });
-
-export default DraggableShape;

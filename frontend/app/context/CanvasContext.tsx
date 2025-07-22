@@ -1,4 +1,11 @@
-import React, {createContext, useContext, useState, ReactNode, Dispatch,SetStateAction,} from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  Dispatch,
+  SetStateAction,
+} from 'react';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,8 +19,8 @@ interface CanvasContextType {
   setTrashedShapes: Dispatch<SetStateAction<ShapeType[]>>;
   deleteToTrash: (id: string) => void;
   restoreShape: (id: string) => void;
-  selectedShapeId: string | null;
-  setSelectedShapeId: Dispatch<SetStateAction<string | null>>;
+  selectedShapeIds: string[];
+  setSelectedShapeIds: Dispatch<SetStateAction<string[]>>;
   undo: () => void;
   redo: () => void;
   saveToHistory: (newShapes: ShapeType[]) => void;
@@ -22,6 +29,7 @@ interface CanvasContextType {
   addImageFromGallery: () => Promise<void>;
   updateShape: (id: string, updates: Partial<ShapeType>) => void;
   setDeletedShapes: Dispatch<SetStateAction<ShapeType[]>>;
+  selectedShapes: ShapeType[];
   deletedShapes: ShapeType[];
   saveToStorage: () => Promise<void>;
   deleteShape: (id: string) => void;
@@ -38,6 +46,20 @@ interface CanvasContextType {
   updateShapeStyle: (id: string, newStyle: Partial<ShapeType['style']>) => void;
   addTextShape: () => void;
   selectShape: (id: string | null) => void;
+  selectedShape: ShapeType | null;
+  saveCanvas: () => Promise<void>;
+  loadCanvas: () => Promise<void>;
+  deselectAllShapes: () => void;
+  groupShapes: () => void;
+  ungroupShapes: () => void;
+  bringToFront: () => void;
+  sendToBack: () => void;
+  bringForward: () => void;
+  sendBackward: () => void;
+  selectedShapeId: string | null;
+setSelectedShapeId: (id: string) => void;
+
+  
 }
 
 const CanvasContext = createContext<CanvasContextType | undefined>(undefined);
@@ -45,7 +67,7 @@ const CanvasContext = createContext<CanvasContextType | undefined>(undefined);
 export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [shapes, setShapes] = useState<ShapeType[]>([]);
   const [trashedShapes, setTrashedShapes] = useState<ShapeType[]>([]);
-  const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
+ const [selectedShapeIds, setSelectedShapeIds] = useState<string[]>([]);
   const [history, setHistory] = useState<ShapeType[][]>([]);
   const [redoStack, setRedoStack] = useState<ShapeType[][]>([]);
   const [deletedShapes, setDeletedShapes] = useState<ShapeType[]>([]);
@@ -53,35 +75,42 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [savedDesign, setSavedDesign] = useState<ShapeType[]>([]);
   const [trash, setTrash] = useState<ShapeType[]>([]);
   const [popupShapeId, setPopupShapeId] = useState<string | null>(null);
+  const deselectAllShapes = () => setSelectedShapeIds([]);
 
-  const addShape = (shape: ShapeType) => {
-    saveToHistory([...shapes, shape]);
+
+  const saveCanvas = async () => {
+    try {
+      await fetch('http://10.222.231.165:8081/api/saveCanvas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(shapes),
+      });
+      alert('Canvas saved to backend!');
+    } catch (error) {
+      console.error('Save error:', error);
+    }
   };
+
+  const loadCanvas = async () => {
+    try {
+      const res = await fetch('http://10.222.231.165:8081/api/loadCanvas');
+      const data = await res.json();
+      setShapes(data);
+    } catch (error) {
+      console.error('Load error:', error);
+    }
+  };
+  const selectedShapeId = selectedShapeIds[0] ?? null;
+
+const setSelectedShapeId = (id: string) => {
+  setSelectedShapeIds([id]);
+};
+
 
   const saveToHistory = (newShapes: ShapeType[]) => {
     setHistory(prev => [...prev, shapes]);
     setRedoStack([]);
     setShapes(newShapes);
-  };
-
-  const deleteShape = (id: string) => {
-    setShapes(prev => prev.filter(shape => shape.id !== id));
-  };
-
-  const updateShape = (id: string, updates: Partial<ShapeType>) => {
-    setShapes(prev =>
-      prev.map(s => (s.id === id ? { ...s, ...updates } : s))
-    );
-  };
-
-  const updateShapeStyle = (id: string, newStyle: Partial<ShapeType['style']>) => {
-    setShapes(prev =>
-      prev.map(shape =>
-        shape.id === id
-          ? { ...shape, style: { ...shape.style, ...newStyle } }
-          : shape
-      )
-    );
   };
 
   const undo = () => {
@@ -140,6 +169,30 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
   };
 
+  const deleteShape = (id: string) => {
+    setShapes(prev => prev.filter(shape => shape.id !== id));
+  };
+
+  const updateShape = (id: string, updates: Partial<ShapeType>) => {
+    setShapes(prev =>
+      prev.map(s => (s.id === id ? { ...s, ...updates } : s))
+    );
+  };
+
+  const updateShapeStyle = (id: string, newStyle: Partial<ShapeType['style']>) => {
+    setShapes(prev =>
+      prev.map(shape =>
+        shape.id === id
+          ? { ...shape, style: { ...shape.style, ...newStyle } }
+          : shape
+      )
+    );
+  };
+
+  const addShape = (shape: ShapeType) => {
+    saveToHistory([...shapes, shape]);
+  };
+
   const addImageFromGallery = async () => {
     const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!granted) return Alert.alert('Permission Denied');
@@ -180,10 +233,84 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
     saveToHistory([...shapes, newShape]);
   };
+const selectShape = (id: string | null) => {
+  if (id === null) {
+    setSelectedShapeIds([]);
+  } else {
+    setSelectedShapeIds(prev =>
+      prev.includes(id) ? prev.filter(existingId => existingId !== id) : [...prev, id]
+    );
+  }
+};
+const selectedShapes = shapes.filter(shape => selectedShapeIds.includes(shape.id));
 
-  const selectShape = (id: string | null) => {
-    setSelectedShapeId(id);
-  };
+
+
+  const groupShapes = () => {
+  if (selectedShapeIds.length < 2) return;
+  const newGroupId = generateUUID();
+  setShapes(prev =>
+    prev.map(shape =>
+      selectedShapeIds.includes(shape.id)
+        ? { ...shape, groupId: newGroupId }
+        : shape
+    )
+  );
+};
+
+const ungroupShapes = () => {
+  setShapes(prev =>
+    prev.map(shape =>
+      selectedShapeIds.includes(shape.id)
+        ? { ...shape, groupId: undefined }
+        : shape
+    )
+  );
+};
+
+const bringForward = () => {
+  const selectedId = selectedShapeIds[0];
+  setShapes(prev => {
+    const index = prev.findIndex(s => s.id === selectedId);
+    if (index === -1 || index === prev.length - 1) return prev;
+    const newShapes = [...prev];
+    [newShapes[index], newShapes[index + 1]] = [newShapes[index + 1], newShapes[index]];
+    return newShapes;
+  });
+};
+
+
+const sendBackward = () => {
+  const selectedId = selectedShapeIds[0];
+  setShapes(prev => {
+    const index = prev.findIndex(s => s.id === selectedId);
+    if (index <= 0) return prev;
+    const newShapes = [...prev];
+    [newShapes[index], newShapes[index - 1]] = [newShapes[index - 1], newShapes[index]];
+    return newShapes;
+  });
+};
+
+const bringToFront = () => {
+  const selectedId = selectedShapeIds[0];
+  setShapes(prev => {
+    const shape = prev.find(s => s.id === selectedId);
+    if (!shape) return prev;
+    return [...prev.filter(s => s.id !== selectedId), shape];
+  });
+};
+
+const sendToBack = () => {
+  const selectedId = selectedShapeIds[0];
+  setShapes(prev => {
+    const shape = prev.find(s => s.id === selectedId);
+    if (!shape) return prev;
+    return [shape, ...prev.filter(s => s.id !== selectedId)];
+  });
+};
+
+
+const selectedShape = shapes.find(shape => shape.id === selectedShapeIds[0]) || null;
 
   const saveToStorage = async () => {
     try {
@@ -225,10 +352,7 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [templates] = useState<ShapeType[][]>(initialTemplates);
 
   const loadTemplate = (index: number) => {
-    const cloned = templates[index].map((shape) => ({
-      ...shape,
-      id: generateUUID(),
-    }));
+    const cloned = templates[index].map(shape => ({ ...shape, id: generateUUID() }));
     setShapes(cloned);
     saveToHistory(cloned);
   };
@@ -242,8 +366,8 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setTrashedShapes,
         deleteToTrash,
         restoreShape,
-        selectedShapeId,
-        setSelectedShapeId,
+        selectedShapeIds,
+        setSelectedShapeIds,
         undo,
         redo,
         saveToHistory,
@@ -268,6 +392,20 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         updateShapeStyle,
         addTextShape,
         selectShape,
+        selectedShape,
+        saveCanvas,
+        deselectAllShapes,
+        loadCanvas,
+        groupShapes,
+        ungroupShapes,
+        bringForward,
+        sendBackward,
+        bringToFront,
+        sendToBack,
+        selectedShapes,
+        selectedShapeId,
+        setSelectedShapeId,
+
       }}
     >
       {children}

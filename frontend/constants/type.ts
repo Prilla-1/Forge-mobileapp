@@ -14,6 +14,7 @@ export interface Style {
   fontFamily?: string;
   fontWeight?: 'normal' | 'bold';
   fontStyle?: 'normal' | 'italic';
+  textDecorationLine?: 'none' | 'underline' | 'line-through' | 'underline line-through';
   rotation?: number;
 }
 
@@ -21,13 +22,13 @@ export interface ShapeType {
   id: string;
   type: 'rectangle' | 'circle' | 'oval' | 'image' | 'text' | 'button';
   position: Position;
-  style: Style;
-
-  
+  style?: Style;
   color?: string;         
   fontSize?: number;      
-  fontColor?: string;     
+  fontColor?: string; 
+  groupId?:string;    
   borderColor?: string;  
   uri?: string;           
-  text?: string;          
+  text?: string;
+  rotation?:number;          
 }
