@@ -1,11 +1,12 @@
 package com.figmine.backend.model;
 
-
 import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
-@Table(name = "shapes")
-
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Shape {
     @Id
     private String id;
@@ -13,16 +14,23 @@ public class Shape {
     private String type;
     private float x;
     private float y;
+
     private Float width;
     private Float height;
-    private String color;
-    private String text;
-    private Float fontSize;
-    private String imageUri;
+    private String backgroundColor;
+    private String borderColor;
+    private Float borderWidth;
+    private Float borderRadius;
     private Float rotation;
 
-    // Getters and setters
+    private String color;
+    private Float fontSize;
+    private String fontFamily;
+    private String fontWeight;
+    private String fontStyle;
+    private String fontColor;
+    private String textDecorationLine;
+
+    private String uri;
+    private String text;
 }
-
-    
-
