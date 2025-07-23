@@ -28,6 +28,9 @@ public class User {
 
     private boolean onboardingComplete = false;
 
+    private String resetPasswordToken;
+    private java.time.LocalDateTime resetPasswordTokenExpiry;
+
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Project> projects;
 }
