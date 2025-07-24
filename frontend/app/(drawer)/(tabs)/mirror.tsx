@@ -1,113 +1,222 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Image, SafeAreaView, StatusBar, TouchableOpacity, Alert } from 'react-native';
+import React, { useRef, useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  SafeAreaView,
+  StatusBar,
+  TouchableOpacity,
+  Alert,
+  Dimensions,
+  ViewStyle,
+  TextStyle,
+  ImageStyle,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 import { useCanvas } from '../../../context/CanvasContext';
-import ViewShot from 'react-native-view-shot';
+import { captureRef } from 'react-native-view-shot';
 import * as MediaLibrary from 'expo-media-library';
+import Svg, { Line as SvgLine } from 'react-native-svg';
 
 export default function MirrorScreen() {
-  const { savedDesign } = useCanvas();
+  const { shapes, lines } = useCanvas();
   const router = useRouter();
   const navigation = useNavigation();
-  const viewShotRef = useRef<any>(null);
+  const viewShotRef = useRef<View>(null);
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
 
-  const avatarUrl = null;
+  const screenWidth = Dimensions.get('window').width;
+  const screenHeight = Dimensions.get('window').height;
+
+  useEffect(() => {
+    if (shapes.length === 0) return;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    shapes.forEach(({ position, style }) => {
+      const { x, y } = position;
+      const width = style?.width || 0;
+      const height = style?.height || 0;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + width);
+      maxY = Math.max(maxY, y + height);
+    });
+
+    const canvasWidth = maxX - minX;
+    const canvasHeight = maxY - minY;
+    const scaleX = (screenWidth - 40) / canvasWidth;
+    const scaleY = (screenHeight - 200) / canvasHeight;
+    const computedScale = Math.min(scaleX, scaleY, 1);
+
+    const offsetX = (screenWidth - canvasWidth * computedScale) / 2 - minX * computedScale;
+    const offsetY = (screenHeight - canvasHeight * computedScale) / 2 - minY * computedScale;
+
+    setScale(computedScale);
+    setOffset({ x: offsetX, y: offsetY });
+  }, [shapes]);
 
   const renderShape = (shape: any) => {
-    const { type, id, style, position, uri } = shape;
+    const { id, type, style, position, uri, text } = shape;
+    const { x, y } = position;
 
-    const commonStyle = {
-      position: 'absolute',
-      left: position.x,
-      top: position.y,
-      ...style,
-    };
+    const positioning: ViewStyle = {
+  position: 'absolute',
+  left: x * scale + offset.x,
+  top: y * scale + offset.y,
+};
+
+const viewStyle: ViewStyle = {
+  ...positioning,
+  width: style?.width ? style.width * scale : undefined,
+  height: style?.height ? style.height * scale : undefined,
+  backgroundColor: style?.backgroundColor,
+  borderRadius: style?.borderRadius ?? 0,
+  justifyContent: 'center',
+  alignItems: 'center',
+};
+
+const textStyle: TextStyle = {
+  fontSize: (style?.fontSize || 16) * scale,
+  color: style?.color || '#000',
+  textAlign: 'center',
+};
+
+const imageStyle: ImageStyle = {
+  position: 'absolute',
+  left: x * scale + offset.x,
+  top: y * scale + offset.y,
+  width: style?.width ? style.width * scale : undefined,
+  height: style?.height ? style.height * scale : undefined,
+};
+
 
     switch (type) {
       case 'rectangle':
-        return <View key={id} style={[commonStyle, { borderRadius: 6 }]} />;
-      case 'circle':
-        return <View key={id} style={[commonStyle, { borderRadius: 999 }]} />;
-      case 'image':
+      case 'oval':
         return (
-          <Image
-            key={id}
-            source={{ uri }}
-            style={[commonStyle, { resizeMode: 'cover' }]}
-          />
+          <View key={id} style={viewStyle}>
+            {text && <Text style={textStyle}>{text}</Text>}
+          </View>
         );
-      default:
-        return null;
+     case 'text':
+  return (
+    <Text
+  key={id}
+  style={[
+    {
+      position: 'absolute',
+      left: x * scale + offset.x,
+      top: y * scale + offset.y,
+    } as TextStyle,
+    textStyle,
+  ]}
+>
+  {text}
+</Text>
+  );
+
+case 'image':
+  return (
+    <Image
+      key={id}
+      source={{ uri }}
+      style={imageStyle}
+      resizeMode="contain"
+    />
+  );
+
     }
   };
 
+  const renderLines = () => (
+    <Svg style={StyleSheet.absoluteFill}>
+      {lines.map((line, index) => {
+        const startShape = shapes.find(s => s.id === line.startShapeId);
+        const endShape = shapes.find(s => s.id === line.endShapeId);
+        if (!startShape || !endShape) return null;
+
+        const startX = (startShape.position.x + (startShape.style?.width || 0) / 2) * scale + offset.x;
+        const startY = (startShape.position.y + (startShape.style?.height || 0) / 2) * scale + offset.y;
+        const endX = (endShape.position.x + (endShape.style?.width || 0) / 2) * scale + offset.x;
+        const endY = (endShape.position.y + (endShape.style?.height || 0) / 2) * scale + offset.y;
+
+        return (
+          <SvgLine
+            key={index}
+            x1={startX}
+            y1={startY}
+            x2={endX}
+            y2={endY}
+            stroke="black"
+            strokeWidth={2}
+          />
+        );
+      })}
+    </Svg>
+  );
+
   const exportToPng = async () => {
+    if (!viewShotRef.current) return Alert.alert('Nothing to export');
+
     try {
-      const uri = await viewShotRef.current.capture();
+      const uri = await captureRef(viewShotRef.current, {
+        format: 'png',
+        quality: 1,
+      });
       const { status } = await MediaLibrary.requestPermissionsAsync();
-
-      if (status === 'granted') {
-        await MediaLibrary.saveToLibraryAsync(uri);
-        Alert.alert('Exported!', 'Design saved to your gallery as PNG.');
-      } else {
-        Alert.alert('Permission denied', 'Cannot save image without permission.');
-      }
+      if (status !== 'granted') throw new Error('Permission denied');
+      await MediaLibrary.saveToLibraryAsync(uri);
+      Alert.alert('Exported!', 'Design saved to your gallery.');
     } catch (error) {
-  if (error instanceof Error) {
-    Alert.alert('Error', 'Failed to export PNG: ' + error.message);
-  } else {
-    Alert.alert('Error', 'Failed to export PNG: ' + String(error));
-  }
-}
-
-
+      Alert.alert('Error', 'Export failed: ' + (error as Error).message);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 🔼 Header */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
           <Ionicons name="menu" size={28} color="#000" />
         </TouchableOpacity>
-
         <Text style={styles.headerTitle}>Mirror</Text>
-
         <TouchableOpacity onPress={() => router.push('/settings')}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
-          ) : (
-            <Ionicons name="person-circle-outline" size={32} color="#00C853" />
-          )}
+          <Ionicons name="person-circle-outline" size={32} color="#00C853" />
         </TouchableOpacity>
       </View>
 
-      {/* 🖼 Canvas Preview Area */}
-      <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1.0, result: 'tmpfile' }} style={{ flex: 1, backgroundColor: 'transparent', position: 'relative' }}>
-        {savedDesign?.length === 0 ? (
-          <Text style={styles.empty}>No design saved yet.</Text>
+      {/* Preview Area */}
+      <View ref={viewShotRef} style={{ flex: 1, backgroundColor: 'white' }}>
+        {shapes.length > 0 ? (
+          <>
+            {renderLines()}
+            {shapes.map(shape => renderShape(shape))}
+          </>
         ) : (
-          savedDesign.map(renderShape)
+          <View style={styles.body}>
+            <Image
+              source={require('../../../assets/images/mirror-placeholder.png')}
+              style={styles.illustration}
+              resizeMode="contain"
+            />
+            <Text style={styles.title}>Select a frame or component</Text>
+            <Text style={styles.subtitle}>
+              Click a top-level frame or component on{"\n"}your computer to get started.
+            </Text>
+          </View>
         )}
-      </ViewShot>
+      </View>
 
-      {/* 📷 Mirror Placeholder */}
-      <View style={styles.body}>
-        <Image
-          source={require('../../../assets/images/mirror-placeholder.png')}
-          style={styles.illustration}
-          resizeMode="contain"
-        />
-        <Text style={styles.title}>Select a frame or component</Text>
-        <Text style={styles.subtitle}>
-          Click a top-level frame or component on{"\n"}your computer to get started.
-        </Text>
-
+      {/* Footer */}
+      <View style={styles.footer}>
         <TouchableOpacity onPress={exportToPng} style={styles.exportButton}>
           <Ionicons name="download-outline" size={24} color="#fff" />
-          <Text style={styles.exportText}>Export to PNG</Text>
+          <Text style={styles.exportText}>Export PNG</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -131,16 +240,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#000',
   },
-  avatarImage: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    resizeMode: 'cover',
-  },
   body: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 30,
     paddingHorizontal: 20,
   },
   illustration: {
@@ -161,19 +264,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  empty: {
-    textAlign: 'center',
-    marginTop: 60,
-    fontSize: 18,
-    color: '#aaa',
-  },
   exportButton: {
-    marginTop: 20,
     backgroundColor: '#00C853',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 12,
   },
   exportText: {
@@ -181,5 +277,9 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 16,
     fontWeight: '600',
+  },
+  footer: {
+    padding: 16,
+    alignItems: 'center',
   },
 });

@@ -12,7 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
-const API_URL = 'http://10.222.231.165:8081/api/auth/login';
+const API_URL = 'http://10.21.192.165:8081/api/auth/login';
 
 
 export default function LoginScreen() {

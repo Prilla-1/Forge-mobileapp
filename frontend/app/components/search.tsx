@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TextInput, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSearch } from '../context/SearchContext';
+import { useSearch } from '../../context/SearchContext';
 
 export default function SearchBar() {
   const { searchQuery, setSearchQuery } = useSearch();

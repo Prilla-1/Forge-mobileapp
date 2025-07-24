@@ -4,6 +4,8 @@ import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ShapeType, LineType, Template } from '../constants/type';
 import { generateUUID } from '@/utils/generateUUID';
+import { loginTemplate } from '@/constants/Template';
+
 
 export interface SavedProject {
   id: string;
@@ -55,12 +57,16 @@ export interface CanvasContextType {
   saveProject: (name?: string) => void;
   currentProjectId: string | null;
   setCurrentProjectId: Dispatch<SetStateAction<string | null>>;
+  connectStartShapeId: string | null;
+  setConnectStartShapeId: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 const CanvasContext = createContext<CanvasContextType | undefined>(undefined);
 
 const initialTemplates: Template[] = [
   { // Template 1: E-commerce Flow - V3
+     id: 'template1',
+    name: 'E-commerce Flow - V3',
     shapes: [
       { id: 'start', type: 'oval', position: { x: 150, y: 20 }, style: { width: 140, height: 60, backgroundColor: '#FFDDC1', borderRadius: 30 }, text: 'Enter website' },
       { id: 'product_list', type: 'rectangle', position: { x: 150, y: 130 }, style: { width: 140, height: 60, backgroundColor: '#A7C7E7' }, text: 'Go to product list page' },
@@ -91,6 +97,8 @@ const initialTemplates: Template[] = [
     ],
   },
   { // Template 2: Problem-Solving Flowchart - V3
+    id: 'template2',
+    name: 'Problem-Solving Flowchart - V3',
     shapes: [
       { id: 't2_start', type: 'oval', position: { x: 350, y: 20 }, style: { width: 120, height: 50, backgroundColor: '#F08080', borderRadius: 25 }, text: 'Start' },
       { id: 't2_see_button', type: 'diamond', position: { x: 300, y: 120 }, style: { width: 220, height: 220, backgroundColor: '#7FFFD4' }, text: 'Can you see a button or a menu item related to what you want to do?' },
@@ -116,6 +124,8 @@ const initialTemplates: Template[] = [
     ],
   },
   { // Template 3: Simple 3-Step Process
+    id: 'template3',
+    name: 'Simple 3-Step Process',
     shapes: [
       { id: 't3_step1', type: 'rectangle', position: { x: 150, y: 50 }, style: { width: 150, height: 70, backgroundColor: '#C1E1C1' }, text: 'Step 1' },
       { id: 't3_step2', type: 'rectangle', position: { x: 150, y: 200 }, style: { width: 150, height: 70, backgroundColor: '#C1E1C1' }, text: 'Step 2' },
@@ -127,6 +137,9 @@ const initialTemplates: Template[] = [
     ],
   },
   { // Template 4: Basic Decision
+    
+    id: 'template4',
+    name: 'Basic Decision',
     shapes: [
       { id: 't4_start', type: 'oval', position: { x: 150, y: 50 }, style: { width: 150, height: 70, backgroundColor: '#FADADD', borderRadius: 35 }, text: 'Start' },
       { id: 't4_decision', type: 'diamond', position: { x: 125, y: 200 }, style: { width: 200, height: 200, backgroundColor: '#BDE4F4' }, text: 'Decision Point' },
@@ -139,9 +152,260 @@ const initialTemplates: Template[] = [
       { id: 't4_l3', startShapeId: 't4_decision', endShapeId: 't4_option_b', label: 'No' },
     ],
   },
+ {
+  id: 'landingPageTemplate',
+  name: 'Landing Page Preview',
+  shapes: [
+    {
+      id: 'hero',
+      type: 'rectangle',
+      position: { x: 50, y: 40 },
+      style: {
+        width: 300,
+        height: 100,
+        backgroundColor: '#E3F2FD',
+      },
+      text: 'Hero Section',
+    },
+    {
+      id: 'features',
+      type: 'rectangle',
+      position: { x: 50, y: 160 },
+      style: {
+        width: 300,
+        height: 120,
+        backgroundColor: '#FFF3E0',
+      },
+      text: 'Features Section',
+    },
+    {
+      id: 'cta',
+      type: 'rectangle',
+      position: { x: 50, y: 290 },
+      style: {
+        width: 300,
+        height: 80,
+        backgroundColor: '#C8E6C9',
+      },
+      text: 'Call To Action',
+    },
+    {
+      id: 'footer',
+      type: 'rectangle',
+      position: { x: 50, y: 380 },
+      style: {
+        width: 300,
+        height: 60,
+        backgroundColor: '#CFD8DC',
+      },
+      text: 'Footer',
+    },
+    {
+      id: 'imagePreview',
+      type: 'image',
+      position: { x: 120, y: 180 },
+      style: {
+        width: 100,
+        height: 80,
+      },
+      uri: 'https://via.placeholder.com/100x80.png?text=Preview', // 🖼️ preview image
+    },
+  ],
+  lines: [],
+},
+{
+  id: 'template_login_ui',
+  name: 'Login Page - Shadowed UI',
+  shapes: [
+    // Title
+    {
+      id: 'title',
+      type: 'text',
+      position: { x: 120, y: 50 },
+      style: { fontSize: 28, color: '#222' },
+      text: 'Welcome Back',
+    },
+    // Email field background
+    {
+      id: 'emailField',
+      type: 'rectangle',
+      position: { x: 50, y: 120 },
+      style: {
+        width: 280,
+        height: 50,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+    },
+    // Email icon placeholder
+    {
+      id: 'emailIcon',
+      type: 'text',
+      position: { x: 60, y: 135 },
+      style: { fontSize: 16, color: '#999' },
+      text: '📧',
+    },
+    // Email placeholder text
+    {
+      id: 'emailText',
+      type: 'text',
+      position: { x: 90, y: 135 },
+      style: { fontSize: 16, color: '#999' },
+      text: 'Email address',
+    },
+
+    // Password field background
+    {
+      id: 'passwordField',
+      type: 'rectangle',
+      position: { x: 50, y: 190 },
+      style: {
+        width: 280,
+        height: 50,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+    },
+    // Password icon placeholder
+    {
+      id: 'passwordIcon',
+      type: 'text',
+      position: { x: 60, y: 205 },
+      style: { fontSize: 16, color: '#999' },
+      text: '🔒',
+    },
+    // Password placeholder text
+    {
+      id: 'passwordText',
+      type: 'text',
+      position: { x: 90, y: 205 },
+      style: { fontSize: 16, color: '#999' },
+      text: 'Password',
+    },
+
+    // Forgot password
+    {
+      id: 'forgotText',
+      type: 'text',
+      position: { x: 180, y: 250 },
+      style: { fontSize: 14, color: '#3498db' },
+      text: 'Forgot password?',
+    },
+
+    // Login button
+    {
+      id: 'loginBtn',
+      type: 'rectangle',
+      position: { x: 50, y: 290 },
+      style: {
+        width: 280,
+        height: 50,
+        backgroundColor: '#3498db',
+        borderRadius: 8,
+      },
+      text: 'Log In',
+    },
+
+    // Sign up prompt
+    {
+      id: 'signupPrompt',
+      type: 'text',
+      position: { x: 90, y: 360 },
+      style: { fontSize: 14, color: '#666' },
+      text: "Don't have an account? Sign up",
+    },
+  ],
+  lines: [],
+},
+{
+  id: 'loginPageTemplate',
+  name: 'Login Page Preview',
+  shapes: [
+    {
+      id: 'logo',
+      type: 'oval',
+      position: { x: 130, y: 40 },
+      style: {
+        width: 100,
+        height: 100,
+        backgroundColor: '#BBDEFB',
+        borderRadius: 50,
+      },
+      text: 'Logo',
+    },
+    {
+      id: 'title',
+      type: 'text',
+      position: { x: 140, y: 150 },
+      style: {
+        width: 120,
+        height: 40,
+        fontSize: 20,
+        backgroundColor: '#FFFFFF',
+      },
+      text: 'Welcome Back',
+    },
+    {
+      id: 'emailInput',
+      type: 'rectangle',
+      position: { x: 70, y: 200 },
+      style: {
+        width: 240,
+        height: 50,
+        backgroundColor: '#F1F1F1',
+      },
+      text: 'Email',
+    },
+    {
+      id: 'passwordInput',
+      type: 'rectangle',
+      position: { x: 70, y: 270 },
+      style: {
+        width: 240,
+        height: 50,
+        backgroundColor: '#F1F1F1',
+      },
+      text: 'Password',
+    },
+    {
+      id: 'loginBtn',
+      type: 'rectangle',
+      position: { x: 70, y: 340 },
+      style: {
+        width: 240,
+        height: 50,
+        backgroundColor: '#4CAF50',
+      },
+      text: 'Log In',
+    },
+    {
+      id: 'loginPreviewImg',
+      type: 'image',
+      position: { x: 250, y: 200 },
+      style: {
+        width: 60,
+        height: 100,
+      },
+      uri: 'https://via.placeholder.com/60x100.png?text=User', // example image preview
+    },
+  ],
+  lines: [],
+},
+
+
 ];
 
+
 export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [connectStartShapeId, setConnectStartShapeId] = useState<string | null>(null);
   const [shapes, setShapes] = useState<ShapeType[]>([]);
   const [lines, setLines] = useState<LineType[]>([]);
   const [trash, setTrash] = useState<ShapeType[]>([]);
@@ -318,21 +582,22 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const loadTemplate = (template: Template) => {
-    const clonedShapes = template.shapes.map((shape) => ({
+    const clonedShapes = template.shapes.map((shape:any) => ({
       ...shape,
       id: generateUUID(),
     }));
-    const idMap = template.shapes.reduce((acc, shape, i) => {
+    const idMap = template.shapes.reduce((acc:any, shape:any, i:any) => {
       (acc as any)[shape.id] = clonedShapes[i].id;
       return acc;
     }, {} as Record<string, string>);
 
-    const clonedLines = template.lines.map(line => ({
-      ...line,
-      id: generateUUID(),
-      startShapeId: idMap[line.startShapeId],
-      endShapeId: idMap[line.endShapeId],
-    }));
+   const clonedLines = template.lines.map((line: LineType) => ({
+  ...line,
+  id: generateUUID(),
+  startShapeId: idMap[line.startShapeId],
+  endShapeId: idMap[line.endShapeId],
+}));
+
 
     setShapes(clonedShapes);
     setLines(clonedLines);
@@ -440,6 +705,8 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         saveProject,
         currentProjectId,
         setCurrentProjectId,
+        connectStartShapeId,
+        setConnectStartShapeId,
       }}
     >
       {children}

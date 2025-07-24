@@ -15,5 +15,19 @@ public class ShapeDto {
     private String text;
 
     // Getters and setters...
+     public static class Position {
+        private int x;
+        private int y;
+        // getters and setters
+    }
+
+    public static class Style {
+        private int width;
+        private int height;
+        private String backgroundColor;
+        private int borderRadius;
+        // more styling props if needed
+        // getters and setters
+    }
 }
 

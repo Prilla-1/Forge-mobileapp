@@ -91,7 +91,7 @@ export default function SignupScreen() {
 
     setLoading(true);
     try {
-      const response = await fetch('http://10.222.231.165:8081/api/auth/signup', {
+      const response = await fetch('http://10.21.192.165:8081/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),

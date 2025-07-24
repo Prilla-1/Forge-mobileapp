@@ -3,14 +3,14 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import TabBar from '../../components/TabBar'; // Import the new custom tab bar
+import TabBar from '../../components/TabBar'; 
 
 export default function TabsLayout() {
   const router = useRouter();
 
   return (
     <Tabs
-      tabBar={(props) => <TabBar {...props} />} // Use the custom tab bar
+      tabBar={(props) => <TabBar {...props} />} 
       screenOptions={({ route }) => ({
         headerTitle: '',
         headerLeft: () => null,

@@ -10,15 +10,21 @@ export interface Style {
   borderColor?: string;
   borderWidth?: number;
   borderRadius?: number;
-
-  color?: string; // For text shapes
+  color?: string;
   fontSize?: number;
+  shadowColor?:string;
+  shadowOffset?: {
+    width: number;
+    height: number;
+}
+
   fontFamily?: string;
   fontWeight?: 'normal' | 'bold';
   fontStyle?: 'normal' | 'italic';
   textDecorationLine?: 'none' | 'underline' | 'line-through' | 'underline line-through';
-
   rotation?: number;
+  shadowOpacity?: number;
+  shadowRadius?: number
 }
 
 export interface ShapeType {
@@ -26,20 +32,22 @@ export interface ShapeType {
   type: 'rectangle' | 'circle' | 'oval' | 'image' | 'text' | 'button' | 'diamond' | 'kite' | 'arrow';
   position: Position;
   style: Style;
-  color?:string;
-
+  color?: string;
   isVisible?: boolean;
   isLocked?: boolean;
-
-  // Specific to certain types
-  uri?: string;     // for images
-  text?: string;    // for text/button shapes
+  uri?: string;
+  text?: string;
+  fontSize?:number;
+  fontColor?:string;
 }
+
 export type ShapeData = {
   id: string;
-  type: ShapeType;
+  type: 'rectangle' | 'circle' | 'oval' | 'image' | 'text' | 'button' | 'diamond' | 'kite' | 'arrow';
   x: number;
   y: number;
+  position: Position;
+  style: Style;
   width: number;
   height: number;
   rotation?: number;
@@ -51,8 +59,8 @@ export type ShapeData = {
   fontStyle?: 'normal' | 'italic';
   fontColor?: string;
   imageUri?: string;
-  connections?: string[]; // optional for lines or connecting shapes
-};
+  connections?: string[];
+}
 
 export interface LineType {
   id: string;
@@ -60,9 +68,19 @@ export interface LineType {
   endShapeId: string;
   label?: string;
 }
-
 export interface Template {
+  id: string;
+  name: string;
   shapes: ShapeType[];
   lines: LineType[];
-  image?:string;
 }
+export type LinePreview = {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+};
+
+
+
+

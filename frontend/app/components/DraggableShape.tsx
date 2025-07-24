@@ -9,11 +9,10 @@ import { ShapeType } from '../../constants/type';
 import { Ionicons } from '@expo/vector-icons';
 import { generateUUID } from '@/utils/generateUUID';
 
-
-
-const HANDLE_SIZE = 20;
+const HANDLE_SIZE = 8;
 const MIN_SIZE = 40;
 const COLORS = ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6', '#34495e', '#fff', '#000'];
+const scaleFactor = 0.3;
 
 interface DraggableShapeProps {
   shape: ShapeType;
@@ -22,10 +21,7 @@ interface DraggableShapeProps {
   onTap: (shapeId: string) => void;
   connectMode: boolean;
   connectStartShapeId: string | null;
-  
-  
 }
-
 type Anchor = 'tl' | 'tr' | 'bl' | 'br' | 't' | 'b' | 'l' | 'r';
 type StartPos = { x: number; y: number };
 
@@ -48,12 +44,11 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
 
   // Close modals if shape is deselected to prevent modal conflicts
   useEffect(() => {
-    if (!isSelected) {
-      if (editTextModal) setEditTextModal(false);
-      if (colorModal) setColorModal(false);
-    }
-  }, [isSelected]);
-
+  if (!isSelected) {
+    setEditTextModal(false);
+    setColorModal(false);
+  }
+}, [isSelected]);
   if (shape.isVisible === false) return null;
 
   const translateX = useSharedValue(shape.position.x);
@@ -61,6 +56,17 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
   const resizeWidth = useSharedValue(shape.style.width || 100);
   const resizeHeight = useSharedValue(shape.style.height || 100);
 
+ 
+const baseHandleStyle = {
+  position: 'absolute' as const,
+  width: HANDLE_SIZE,
+  height: HANDLE_SIZE,
+  backgroundColor: '#fff',
+  borderRadius: 2,
+  borderColor: '#888',
+  borderWidth: 1,
+  zIndex: 10,
+};
   const baseStyle: ViewStyle = {
     backgroundColor: shape.style?.backgroundColor || '#ccc',
     borderRadius: shape.type === 'circle' || shape.type === 'oval' ? 999 : (shape.style?.borderRadius || 0),
@@ -80,43 +86,47 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
     Gesture.Pan()
       .onBegin(() => runOnJS(setSelectedShapeId)(shape.id))
       .onUpdate((event) => {
-        let newWidth = resizeWidth.value;
-        let newHeight = resizeHeight.value;
-        let newX = translateX.value;
-        let newY = translateY.value;
+  const scaleFactor = 0.2;
 
-        if (shape.type === 'diamond') {
-          const change = Math.max(event.translationX, event.translationY);
-          newWidth = resizeWidth.value + change;
-          newHeight = resizeWidth.value + change;
-        } else {
-          if (anchor.includes('l')) {
-            newWidth = resizeWidth.value - event.translationX;
-            newX = shape.position.x + event.translationX;
-          } else if (anchor.includes('r')) {
-            newWidth = resizeWidth.value + event.translationX;
-          }
-          if (anchor.includes('t')) {
-            newHeight = resizeHeight.value - event.translationY;
-            newY = shape.position.y + event.translationY;
-          } else if (anchor.includes('b')) {
-            newHeight = resizeHeight.value + event.translationY;
-          }
-        }
+  let newWidth = resizeWidth.value;
+  let newHeight = resizeHeight.value;
+  let newX = translateX.value;
+  let newY = translateY.value;
 
-        resizeWidth.value = Math.max(MIN_SIZE, newWidth);
-        resizeHeight.value = Math.max(MIN_SIZE, newHeight);
-        translateX.value = newX;
-        translateY.value = newY;
-      })
-      .onEnd(updatePositionAndSize);
+  if (shape.type === 'diamond') {
+    const change = Math.max(event.translationX, event.translationY) * scaleFactor;
+    newWidth = resizeWidth.value + change;
+    newHeight = resizeWidth.value + change;
+  } else {
+    if (anchor.includes('l')) {
+      newWidth = resizeWidth.value - event.translationX * scaleFactor;
+      newX = shape.position.x + event.translationX * scaleFactor;
+    } else if (anchor.includes('r')) {
+      newWidth = resizeWidth.value + event.translationX * scaleFactor;
+    }
+
+    if (anchor.includes('t')) {
+      newHeight = resizeHeight.value - event.translationY * scaleFactor;
+      newY = shape.position.y + event.translationY * scaleFactor;
+    } else if (anchor.includes('b')) {
+      newHeight = resizeHeight.value + event.translationY * scaleFactor;
+    }
+  }
+
+  resizeWidth.value = Math.max(MIN_SIZE, newWidth);
+  resizeHeight.value = Math.max(MIN_SIZE, newHeight);
+  translateX.value = newX;
+  translateY.value = newY;
+})
+.onEnd(updatePositionAndSize);
 
   const panGesture = Gesture.Pan()
     .onBegin(() => runOnJS(setSelectedShapeId)(shape.id))
     .onUpdate((event) => {
+      const scaleFactor=0.2;
       if (shape.isLocked) return;
-      translateX.value = withSpring(event.translationX + shape.position.x);
-      translateY.value = withSpring(event.translationY + shape.position.y);
+      translateX.value = withSpring((event.translationX*scaleFactor) + shape.position.x);
+      translateY.value = withSpring((event.translationY*scaleFactor) + shape.position.y);
     })
     .onEnd(updatePositionAndSize);
 
@@ -171,15 +181,54 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
   });
 
   // Animated styles for each handle
-  const handleTL = useAnimatedStyle(() => ({ position: 'absolute', left: -HANDLE_SIZE / 2, top: -HANDLE_SIZE / 2, width: HANDLE_SIZE, height: HANDLE_SIZE, backgroundColor: '#000', borderRadius: 10, zIndex: 10 }));
-  const handleTR = useAnimatedStyle(() => ({ position: 'absolute', left: resizeWidth.value - HANDLE_SIZE / 2, top: -HANDLE_SIZE / 2, width: HANDLE_SIZE, height: HANDLE_SIZE, backgroundColor: '#000', borderRadius: 10, zIndex: 10 }));
-  const handleBL = useAnimatedStyle(() => ({ position: 'absolute', left: -HANDLE_SIZE / 2, top: resizeHeight.value - HANDLE_SIZE / 2, width: HANDLE_SIZE, height: HANDLE_SIZE, backgroundColor: '#000', borderRadius: 10, zIndex: 10 }));
-  const handleBR = useAnimatedStyle(() => ({ position: 'absolute', left: resizeWidth.value - HANDLE_SIZE / 2, top: resizeHeight.value - HANDLE_SIZE / 2, width: HANDLE_SIZE, height: HANDLE_SIZE, backgroundColor: '#000', borderRadius: 10, zIndex: 10 }));
-  const handleT = useAnimatedStyle(() => ({ position: 'absolute', left: (resizeWidth.value - HANDLE_SIZE) / 2, top: -HANDLE_SIZE / 2, width: HANDLE_SIZE, height: HANDLE_SIZE, backgroundColor: '#000', borderRadius: 10, zIndex: 10 }));
-  const handleB = useAnimatedStyle(() => ({ position: 'absolute', left: (resizeWidth.value - HANDLE_SIZE) / 2, top: resizeHeight.value - HANDLE_SIZE / 2, width: HANDLE_SIZE, height: HANDLE_SIZE, backgroundColor: '#000', borderRadius: 10, zIndex: 10 }));
-  const handleL = useAnimatedStyle(() => ({ position: 'absolute', left: -HANDLE_SIZE / 2, top: (resizeHeight.value - HANDLE_SIZE) / 2, width: HANDLE_SIZE, height: HANDLE_SIZE, backgroundColor: '#000', borderRadius: 10, zIndex: 10 }));
-  const handleR = useAnimatedStyle(() => ({ position: 'absolute', left: resizeWidth.value - HANDLE_SIZE / 2, top: (resizeHeight.value - HANDLE_SIZE) / 2, width: HANDLE_SIZE, height: HANDLE_SIZE, backgroundColor: '#000', borderRadius: 10, zIndex: 10 }));
+  
+const handleTL = useAnimatedStyle(() => ({
+  ...baseHandleStyle,
+  left: -HANDLE_SIZE / 2,
+  top: -HANDLE_SIZE / 2,
+}));
 
+const handleTR = useAnimatedStyle(() => ({
+  ...baseHandleStyle,
+  left: resizeWidth.value - HANDLE_SIZE / 2,
+  top: -HANDLE_SIZE / 2,
+}));
+
+const handleBL = useAnimatedStyle(() => ({
+  ...baseHandleStyle,
+  left: -HANDLE_SIZE / 2,
+  top: resizeHeight.value - HANDLE_SIZE / 2,
+}));
+
+const handleBR = useAnimatedStyle(() => ({
+  ...baseHandleStyle,
+  left: resizeWidth.value - HANDLE_SIZE / 2,
+  top: resizeHeight.value - HANDLE_SIZE / 2,
+}));
+
+const handleT = useAnimatedStyle(() => ({
+  ...baseHandleStyle,
+  left: (resizeWidth.value - HANDLE_SIZE) / 2,
+  top: -HANDLE_SIZE / 2,
+}));
+
+const handleB = useAnimatedStyle(() => ({
+  ...baseHandleStyle,
+  left: (resizeWidth.value - HANDLE_SIZE) / 2,
+  top: resizeHeight.value - HANDLE_SIZE / 2,
+}));
+
+const handleL = useAnimatedStyle(() => ({
+  ...baseHandleStyle,
+  left: -HANDLE_SIZE / 2,
+  top: (resizeHeight.value - HANDLE_SIZE) / 2,
+}));
+
+const handleR = useAnimatedStyle(() => ({
+  ...baseHandleStyle,
+  left: resizeWidth.value - HANDLE_SIZE / 2,
+  top: (resizeHeight.value - HANDLE_SIZE) / 2,
+}));
   // Ref for TextInput to blur on save
   const textInputRef = React.useRef<TextInput>(null);
 
@@ -216,64 +265,79 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
       {isSelected && (
         <>
           {/* Global Modal for Text Editing */}
-          <Modal
-            visible={editTextModal}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setEditTextModal(false)}
-          >
-            <View style={[styles.modalOverlay, { flex: 1, justifyContent: 'center', alignItems: 'center', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }]}>
-              <View style={styles.modalContent}>
-                <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Edit Text</Text>
-                {/* Formatting Toolbar */}
-                <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 8 }}>
-                  <TouchableOpacity onPress={() => setBold(b => !b)} style={[styles.toolbarBtn, bold && { backgroundColor: '#eee' }]}>
-                    <Text style={{ fontWeight: 'bold' }}>B</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setItalic(i => !i)} style={[styles.toolbarBtn, italic && { backgroundColor: '#eee' }]}>
-                    <Text style={{ fontStyle: 'italic' }}>I</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setUnderline(u => !u)} style={[styles.toolbarBtn, underline && { backgroundColor: '#eee' }]}>
-                    <Text style={{ textDecorationLine: 'underline' }}>U</Text>
-                  </TouchableOpacity>
-                </View>
-                <TextInput
-                   ref={textInputRef as React.Ref<TextInput>}
-                  value={editText}
-                  onChangeText={setEditText}
-                  style={[styles.textInput, { textAlign: 'center', fontWeight: bold ? 'bold' : 'normal', fontStyle: italic ? 'italic' : 'normal', textDecorationLine: underline ? 'underline' : 'none' }]}
-                  autoFocus
-                />
-                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
-                  <TouchableOpacity onPress={() => setEditTextModal(false)} style={styles.cancelBtn}>
-                    <Text>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={async () => {
-                      try {
-                        if (textInputRef.current) textInputRef.current.blur();
-                        updateShape(shape.id, {
-                          text: editText,
-                          style: {
-                            ...shape.style,
-                            fontWeight: bold ? 'bold' : 'normal',
-                            fontStyle: italic ? 'italic' : 'normal',
-                            textDecorationLine: underline ? 'underline' : 'none',
-                          },
-                        });
-                        setEditTextModal(false);
-                      } catch (e) {
-                        setEditTextModal(false);
-                      }
-                    }}
-                    style={styles.saveBtn}
-                  >
-                    <Text style={{ color: 'white' }}>Save</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal>
+        <Modal
+  visible={editTextModal}
+  transparent
+  animationType="fade"
+  onRequestClose={() => setEditTextModal(false)}
+>
+  <View style={[styles.modalOverlay]}>
+    <View style={styles.modalContent}>
+      <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Edit Text</Text>
+
+      {/* Toolbar */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 8 }}>
+        <TouchableOpacity
+          onPress={() => setBold(b => !b)}
+          style={[styles.toolbarBtn, bold && { backgroundColor: '#eee' }]}
+        >
+          <Text style={{ fontWeight: 'bold' }}>B</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setItalic(i => !i)}
+          style={[styles.toolbarBtn, italic && { backgroundColor: '#eee' }]}
+        >
+          <Text style={{ fontStyle: 'italic' }}>I</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setUnderline(u => !u)}
+          style={[styles.toolbarBtn, underline && { backgroundColor: '#eee' }]}
+        >
+          <Text style={{ textDecorationLine: 'underline' }}>U</Text>
+        </TouchableOpacity>
+      </View>
+
+      <TextInput
+        ref={textInputRef as React.Ref<TextInput>}
+        value={editText}
+        onChangeText={setEditText}
+        autoFocus
+        style={[
+          styles.textInput,
+          {
+            textAlign: 'center',
+            fontWeight: bold ? 'bold' : 'normal',
+            fontStyle: italic ? 'italic' : 'normal',
+            textDecorationLine: underline ? 'underline' : 'none',
+          },
+        ]}
+      />
+
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
+        <TouchableOpacity onPress={() => setEditTextModal(false)} style={styles.cancelBtn}>
+          <Text>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.saveBtn}
+          onPress={() => {
+           updateShape(shape.id, {
+              text: editText,
+               style: {
+             ...(shape.style || {}),
+              fontWeight: bold ? 'bold' : 'normal',
+               fontStyle: italic ? 'italic' : 'normal',
+                textDecorationLine: underline ? 'underline' : 'none', },
+                     });
+            setEditTextModal(false);
+          }}
+        >
+          <Text style={{ color: 'white' }}>Save</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
+
           {/* Color Picker Modal */}
           <Modal
             visible={colorModal}
@@ -300,14 +364,14 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                       onPress={() => {
                         try {
                           updateShape(shape.id, {
-                            style: {
+                             style: {
+                         ...shape.style, 
                               backgroundColor: color,
-                            },
-                          });
-                        } finally {
-                          setColorModal(false);
-                        }
-                      }}
+                                 },
+                         });
+                       } finally {
+                      setColorModal(false);
+                          }}}
                     />
                   ))}
                 </View>
@@ -402,19 +466,29 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                 </GestureDetector>
               </>
             )}
-            {/* Resize Handles */}
-            {isSelected && !shape.isLocked && (
-              <>
-                <GestureDetector gesture={createResizeGesture('tl')}><Animated.View style={handleTL} /></GestureDetector>
-                <GestureDetector gesture={createResizeGesture('tr')}><Animated.View style={handleTR} /></GestureDetector>
-                <GestureDetector gesture={createResizeGesture('bl')}><Animated.View style={handleBL} /></GestureDetector>
-                <GestureDetector gesture={createResizeGesture('br')}><Animated.View style={handleBR} /></GestureDetector>
-                <GestureDetector gesture={createResizeGesture('t')}><Animated.View style={handleT} /></GestureDetector>
-                <GestureDetector gesture={createResizeGesture('b')}><Animated.View style={handleB} /></GestureDetector>
-                <GestureDetector gesture={createResizeGesture('l')}><Animated.View style={handleL} /></GestureDetector>
-                <GestureDetector gesture={createResizeGesture('r')}><Animated.View style={handleR} /></GestureDetector>
-              </>
-            )}
+          {/* Resize Handles */}
+{isSelected && !shape.isLocked && (
+  <>
+    {(['tl', 'tr', 'bl', 'br', 't', 'b', 'l', 'r'] as Anchor[]).map((anchor) => {
+      const handleStyle =
+        anchor === 'tl' ? handleTL :
+        anchor === 'tr' ? handleTR :
+        anchor === 'bl' ? handleBL :
+        anchor === 'br' ? handleBR :
+        anchor === 't'  ? handleT  :
+        anchor === 'b'  ? handleB  :
+        anchor === 'l'  ? handleL  :
+        handleR;
+
+      return (
+        <GestureDetector key={anchor} gesture={createResizeGesture(anchor)}>
+          <Animated.View style={handleStyle} />
+        </GestureDetector>
+      );
+    })}
+  </>
+)}
+
           </TouchableOpacity>
         </Animated.View>
       </GestureDetector>
@@ -446,7 +520,7 @@ const styles = StyleSheet.create({
 },
   lockOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
@@ -484,7 +558,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 100,

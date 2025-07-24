@@ -1,12 +1,9 @@
-import React, { useState,useRef } from 'react';
+import React, { useState,useRef,forwardRef} from 'react';
+import type { RefObject } from 'react';
 import { View, Text,StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import {
-  PanGestureHandler,
-  PinchGestureHandler,
-  PinchGestureHandlerGestureEvent,
-} from 'react-native-gesture-handler';
+import {PanGestureHandler, PinchGestureHandler, PinchGestureHandlerGestureEvent,} from 'react-native-gesture-handler';
 import Animated, {useAnimatedGestureHandler, useAnimatedStyle, useSharedValue, withSpring,} from 'react-native-reanimated';
 import { useCanvas } from '../../../context/CanvasContext';
 import Canvas from '../../components/Canvas';
@@ -16,7 +13,16 @@ import ViewShot from 'react-native-view-shot';
 
 export default function CanvasScreen() {
   const router = useRouter();
-  const canvasRef = useRef<View>(null);
+  const canvasRef = useRef<any>(null);
+  
+const previewInMirror = async () => {
+  try {
+    const uri = await canvasRef.current.capture();
+    router.push({ pathname: "/mirror", params: { imageUri: uri } });
+  } catch (e) {
+    console.error("Failed to preview", e);
+  }
+};
 
   const {
     shapes,
@@ -82,7 +88,7 @@ export default function CanvasScreen() {
 
   const handleSave = async () => {
     try {
-      const response = await fetch('http://10.222.231.165:8081/api/templates', {
+      const response = await fetch('http://10.21.192.165:8081/api/templates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ shapes, lines }),
@@ -97,6 +103,7 @@ export default function CanvasScreen() {
       Alert.alert('Error', 'Something went wrong while saving.');
     }
   };
+
   const captureCanvas = async () => {
   try {
     const uri = await captureRef(canvasRef, {
@@ -112,8 +119,6 @@ export default function CanvasScreen() {
   }
 };
 
-
-
   return (
     <View style={styles.container}>
       <PanGestureHandler onGestureEvent={onPanEvent}>
@@ -122,6 +127,7 @@ export default function CanvasScreen() {
             <View style={styles.canvasContainer}>
   <ViewShot ref={canvasRef} options={{ format: 'png', quality: 1 }} style={{ flex: 1 }}>
     <Canvas
+      ref={canvasRef}
       panX={panX}
       panY={panY}
       scale={scale}
@@ -169,16 +175,15 @@ export default function CanvasScreen() {
           onPress={() => {
             setConnectMode(prev => !prev);
             setConnectStartShapeId(null);
-          }}
-        >
+          }}>
           <Ionicons name="git-compare-outline" size={28} color={connectMode ? '#fff' : '#A07BB7'} />
         </TouchableOpacity>
         <TouchableOpacity onPress={handleSave}>
           <Ionicons name="save-outline" size={28} color="#00C853" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={captureCanvas}>
-  <Text>Export Canvas</Text>
-</TouchableOpacity>
+         <View><TouchableOpacity style={styles.Button} onPress={previewInMirror}>
+  <Text style={styles.buttonText}>Preview</Text>
+</TouchableOpacity></View>
 
       </View>
     </View>
@@ -226,5 +231,23 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 5,
     zIndex: 10,
+  },
+  Button: {
+    borderRadius: 12,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#A07BB7',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontSize: 10,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
 });
