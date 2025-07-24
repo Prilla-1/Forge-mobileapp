@@ -7,11 +7,7 @@ import com.figmine.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.UUID;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.SimpleMailMessage;
 
 @Service
 @RequiredArgsConstructor
@@ -39,39 +35,5 @@ public class AuthService {
             return userOpt;
         }
         return Optional.empty();
-    }
-
-    public void initiatePasswordReset(String email, JavaMailSender mailSender, String appUrl) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            String token = UUID.randomUUID().toString();
-            user.setResetPasswordToken(token);
-            user.setResetPasswordTokenExpiry(LocalDateTime.now().plusHours(1));
-            userRepository.save(user);
-
-            // Send email
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(user.getEmail());
-            message.setSubject("Password Reset Request");
-            message.setText("To reset your password, click the link below:\n" +
-                appUrl + "/reset-password?token=" + token);
-            mailSender.send(message);
-        }
-    }
-
-    public boolean resetPassword(String token, String newPassword) {
-        Optional<User> userOpt = userRepository.findAll().stream()
-            .filter(u -> token.equals(u.getResetPasswordToken()) && u.getResetPasswordTokenExpiry() != null && u.getResetPasswordTokenExpiry().isAfter(LocalDateTime.now()))
-            .findFirst();
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            user.setPassword(passwordEncoder.encode(newPassword));
-            user.setResetPasswordToken(null);
-            user.setResetPasswordTokenExpiry(null);
-            userRepository.save(user);
-            return true;
-        }
-        return false;
     }
 }
