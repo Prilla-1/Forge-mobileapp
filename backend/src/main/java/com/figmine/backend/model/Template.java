@@ -21,4 +21,5 @@ public class Template {
 
     @Column(columnDefinition = "TEXT")
     private String lines;  // Store JSON string of lines
+    
 }

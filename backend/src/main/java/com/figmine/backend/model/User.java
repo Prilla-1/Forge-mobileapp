@@ -2,6 +2,7 @@ package com.figmine.backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity
@@ -30,4 +31,9 @@ public class User {
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Project> projects;
+
+    // ✅ Fields for Forgot Password functionality
+    private String resetToken;
+
+    private LocalDateTime resetTokenExpiry;
 }

@@ -3,6 +3,9 @@ import { ShapeType } from '../constants/type';
 
 const BACKEND_URL = 'http://10.222.231.165:8081/api';
 
+// const BACKEND_URL = 'http://10.21.192.165:8081';
+
+
 export const saveShapes = async (shapes: ShapeType[]) => {
   try {
     await AsyncStorage.setItem('shapes', JSON.stringify(shapes));

@@ -246,8 +246,6 @@ const handleR = useAnimatedStyle(() => ({
     position: { x: Math.round(translateX.value), y: Math.round(translateY.value) },
   });
 });
-
-
   // Combine pan and pinch gestures
   const panAndPinch = Gesture.Simultaneous(panGesture, pinchGesture);
 
@@ -259,7 +257,7 @@ const handleR = useAnimatedStyle(() => ({
       setSelectedShapeId(shape.id);
     }
   };
-
+  
   return (
     <>
       {isSelected && (

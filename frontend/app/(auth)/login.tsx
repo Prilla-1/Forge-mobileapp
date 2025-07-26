@@ -9,10 +9,9 @@ import { useFonts } from 'expo-font';
 import COLORS from '../../constants/Colors';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing, withDelay } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useUser} from '../../context/UserContext';
 
-
-
-const API_URL = 'http://10.21.192.165:8081/api/auth/login';
+const API_URL = 'http://10.188.233.165:8081/api/auth/login';
 
 
 export default function LoginScreen() {
@@ -20,6 +19,8 @@ export default function LoginScreen() {
     'JetBrainsMono-Medium': require('../../assets/fonts/fonts/ttf/JetBrainsMono-Medium.ttf'),
   });
   const router = useRouter();
+  const { setUser } = useUser(); // get setUser from context
+
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState('');
@@ -50,46 +51,55 @@ export default function LoginScreen() {
   const isStrongPassword = (password: string) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^+=-_])[A-Za-z\d@$!%*?&#^+=-_]{8,}$/.test(password);
 
   const handleLogin = async () => {
-    setError('');
-    if (!email || !password) {
-      setError('Please enter both email and password.');
-      return;
-    }
-    if (!validateEmail(email)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-    if (!isStrongPassword(password)) {
-      setError('Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.');
-      return;
-    }
-    setLoading(true);
-    try {
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    setError(errorText || 'Login failed');
-    setLoading(false);
+  setError('');
+  if (!email || !password) {
+    setError('Please enter both email and password.');
+    return;
+  }
+  if (!validateEmail(email)) {
+    setError('Please enter a valid email address.');
+    return;
+  }
+  if (!isStrongPassword(password)) {
+    setError('Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.');
     return;
   }
 
-  const data = await response.json();
-  const token = data.token;
+  setLoading(true);
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log("Login failed:", response.status, errorText);
+      setError(`Login failed: ${response.status} - ${errorText}`);
+      setLoading(false);
+      return;
+    }
 
-  router.replace('/(drawer)/(tabs)/mirror'); // redirect on success
-} catch (err) {
-  setError('Network error. Please try again.');
-} finally {
-  setLoading(false);
-}
+    const data = await response.json();
+    const token = data.token;
+    const username = data.username; 
 
-  };
+    // ✅ Save user info to context
+    setUser({ username });
+
+    // (Optional) Save token to AsyncStorage
+    await AsyncStorage.setItem('token', token);
+    
+    router.replace('/(drawer)/(tabs)/mirror');
+  } catch (err) {
+    console.error('Login error:', err);
+    setError('Network error. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <LinearGradient colors={["#A07BB7", "#F6F2F7"]} style={{ flex: 1 }}>

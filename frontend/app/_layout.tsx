@@ -1,5 +1,6 @@
 import React from 'react';
 import { Slot } from 'expo-router';
+import { UserProvider } from '../context/UserContext';
 import { CanvasProvider } from '../context/CanvasContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -8,6 +9,7 @@ import SearchProvider from '../context/SearchContext';
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <UserProvider>
       <SafeAreaProvider>
         <SearchProvider>
           <CanvasProvider>
@@ -15,6 +17,7 @@ export default function RootLayout() {
           </CanvasProvider>
         </SearchProvider>
       </SafeAreaProvider>
+      </UserProvider>
     </GestureHandlerRootView>
   );
 }

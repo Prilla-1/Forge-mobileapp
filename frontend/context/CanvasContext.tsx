@@ -59,6 +59,8 @@ export interface CanvasContextType {
   setCurrentProjectId: Dispatch<SetStateAction<string | null>>;
   connectStartShapeId: string | null;
   setConnectStartShapeId: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedShapeIds: string[];
+setSelectedShapeIds: Dispatch<SetStateAction<string[]>>;
 }
 
 const CanvasContext = createContext<CanvasContextType | undefined>(undefined);
@@ -420,6 +422,8 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [previewLine, setPreviewLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [selectedShapeIds, setSelectedShapeIds] = useState<string[]>([]);
+
 
   const addShape = (shape: ShapeType) => {
     saveToHistory([...shapes, shape]);
@@ -707,6 +711,8 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setCurrentProjectId,
         connectStartShapeId,
         setConnectStartShapeId,
+        selectedShapeIds,
+         setSelectedShapeIds,
       }}
     >
       {children}

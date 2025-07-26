@@ -25,7 +25,7 @@ export default function MirrorScreen() {
   const { shapes, lines } = useCanvas();
   const router = useRouter();
   const navigation = useNavigation();
-  const viewShotRef = useRef<View>(null);
+  const canvasRef = useRef<View>(null);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
@@ -64,72 +64,72 @@ export default function MirrorScreen() {
     const { id, type, style, position, uri, text } = shape;
     const { x, y } = position;
 
-    const positioning: ViewStyle = {
-  position: 'absolute',
-  left: x * scale + offset.x,
-  top: y * scale + offset.y,
-};
-
-const viewStyle: ViewStyle = {
-  ...positioning,
-  width: style?.width ? style.width * scale : undefined,
-  height: style?.height ? style.height * scale : undefined,
-  backgroundColor: style?.backgroundColor,
-  borderRadius: style?.borderRadius ?? 0,
-  justifyContent: 'center',
-  alignItems: 'center',
-};
-
-const textStyle: TextStyle = {
-  fontSize: (style?.fontSize || 16) * scale,
-  color: style?.color || '#000',
-  textAlign: 'center',
-};
-
-const imageStyle: ImageStyle = {
-  position: 'absolute',
-  left: x * scale + offset.x,
-  top: y * scale + offset.y,
-  width: style?.width ? style.width * scale : undefined,
-  height: style?.height ? style.height * scale : undefined,
-};
-
+    const basePosition = {
+      position: 'absolute' as const,
+      left: x * scale + offset.x,
+      top: y * scale + offset.y,
+    };
 
     switch (type) {
       case 'rectangle':
-      case 'oval':
+      case 'oval': {
+        const viewStyle: ViewStyle = {
+          ...basePosition,
+          width: style?.width ? style.width * scale : undefined,
+          height: style?.height ? style.height * scale : undefined,
+          backgroundColor: style?.backgroundColor,
+          borderRadius: style?.borderRadius ?? 0,
+          justifyContent: 'center',
+          alignItems: 'center',
+        };
+
+        const textStyle: TextStyle = {
+          fontSize: (style?.fontSize || 16) * scale,
+          color: style?.color || '#000',
+          textAlign: 'center',
+        };
+
         return (
           <View key={id} style={viewStyle}>
             {text && <Text style={textStyle}>{text}</Text>}
           </View>
         );
-     case 'text':
-  return (
-    <Text
-  key={id}
-  style={[
-    {
-      position: 'absolute',
-      left: x * scale + offset.x,
-      top: y * scale + offset.y,
-    } as TextStyle,
-    textStyle,
-  ]}
->
-  {text}
-</Text>
-  );
+      }
 
-case 'image':
-  return (
-    <Image
-      key={id}
-      source={{ uri }}
-      style={imageStyle}
-      resizeMode="contain"
-    />
-  );
+      case 'text': {
+        const textPositionStyle: TextStyle = {
+          ...basePosition,
+          fontSize: (style?.fontSize || 16) * scale,
+          color: style?.color || '#000',
+          textAlign: 'center',
+        };
 
+        return (
+          <Text key={id} style={textPositionStyle}>
+            {text}
+          </Text>
+        );
+      }
+
+      case 'image': {
+        const imageStyle: ImageStyle = {
+          ...basePosition,
+          width: style?.width ? style.width * scale : undefined,
+          height: style?.height ? style.height * scale : undefined,
+        };
+
+        return (
+          <Image
+            key={id}
+            source={{ uri }}
+            style={imageStyle}
+            resizeMode="contain"
+          />
+        );
+      }
+
+      default:
+        return null;
     }
   };
 
@@ -145,31 +145,26 @@ case 'image':
         const endX = (endShape.position.x + (endShape.style?.width || 0) / 2) * scale + offset.x;
         const endY = (endShape.position.y + (endShape.style?.height || 0) / 2) * scale + offset.y;
 
-        return (
-          <SvgLine
-            key={index}
-            x1={startX}
-            y1={startY}
-            x2={endX}
-            y2={endY}
-            stroke="black"
-            strokeWidth={2}
-          />
-        );
+        return <SvgLine key={index} x1={startX} y1={startY} x2={endX} y2={endY} stroke="black" strokeWidth={2} />;
       })}
     </Svg>
   );
 
   const exportToPng = async () => {
-    if (!viewShotRef.current) return Alert.alert('Nothing to export');
+    if (!canvasRef.current) {
+      Alert.alert('Error', 'Canvas not ready');
+      return;
+    }
 
     try {
-      const uri = await captureRef(viewShotRef.current, {
+      const uri = await captureRef(canvasRef, {
         format: 'png',
         quality: 1,
       });
+
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== 'granted') throw new Error('Permission denied');
+
       await MediaLibrary.saveToLibraryAsync(uri);
       Alert.alert('Exported!', 'Design saved to your gallery.');
     } catch (error) {
@@ -179,7 +174,6 @@ case 'image':
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
           <Ionicons name="menu" size={28} color="#000" />
@@ -190,29 +184,20 @@ case 'image':
         </TouchableOpacity>
       </View>
 
-      {/* Preview Area */}
-      <View ref={viewShotRef} style={{ flex: 1, backgroundColor: 'white' }}>
-        {shapes.length > 0 ? (
-          <>
-            {renderLines()}
-            {shapes.map(shape => renderShape(shape))}
-          </>
-        ) : (
-          <View style={styles.body}>
-            <Image
-              source={require('../../../assets/images/mirror-placeholder.png')}
-              style={styles.illustration}
-              resizeMode="contain"
-            />
-            <Text style={styles.title}>Select a frame or component</Text>
-            <Text style={styles.subtitle}>
-              Click a top-level frame or component on{"\n"}your computer to get started.
-            </Text>
-          </View>
-        )}
+      <View style={{ flex: 1, backgroundColor: '#fff' }}>
+        <View ref={canvasRef} collapsable={false} style={styles.canvas}>
+          {renderLines()}
+          {shapes.map(shape => renderShape(shape))}
+        </View>
+
+        <TouchableOpacity
+          style={styles.aiButton}
+          onPress={() => router.push('/prompt')}
+        >
+          <Ionicons name="sparkles" size={28} color="#fff" />
+        </TouchableOpacity>
       </View>
 
-      {/* Footer */}
       <View style={styles.footer}>
         <TouchableOpacity onPress={exportToPng} style={styles.exportButton}>
           <Ionicons name="download-outline" size={24} color="#fff" />
@@ -240,29 +225,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#000',
   },
-  body: {
+  canvas: {
     flex: 1,
+    backgroundColor: '#fff',
+  },
+  footer: {
+    padding: 16,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  illustration: {
-    width: 120,
-    height: 120,
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#888',
-    textAlign: 'center',
-    lineHeight: 20,
   },
   exportButton: {
     backgroundColor: '#00C853',
@@ -278,8 +247,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  footer: {
-    padding: 16,
+  aiButton: {
+    position: 'absolute',
+    bottom: 100,
+    right: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#6200ee',
+    justifyContent: 'center',
     alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
   },
 });

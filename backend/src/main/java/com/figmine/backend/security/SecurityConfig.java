@@ -20,6 +20,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -40,7 +41,7 @@ public class SecurityConfig {
                 .map(user -> org.springframework.security.core.userdetails.User
                         .withUsername(user.getEmail())
                         .password(user.getPassword())
-                        .authorities("USER") // Add roles if needed
+                        .authorities("USER")
                         .build())
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
     }
@@ -62,26 +63,22 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
+                // Public routes
                 .requestMatchers(
                     "/api/auth/**",
-                    "/swagger-ui.html",
+                    "/api/diffuse/**",        // Allow AI/image endpoints
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
-                    "/v3/api-docs.yaml"
+                    "/error"                  // Avoid Whitelabel 403 on errors
                 ).permitAll()
-
-                // Allow frontend OPTIONS preflight (important for CORS)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                // Secure this route but allow JWT
+                
+                // Protected routes
                 .requestMatchers("/api/users/me", "/api/users/me/**").authenticated()
-
-                // All others require auth
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-            .headers(headers -> headers.frameOptions(frame -> frame.disable())); // Swagger iframe access
+            .headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         return http.build();
     }
@@ -89,8 +86,17 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("*")); // Use frontend origin in production
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        config.setAllowedOrigins(Arrays.asList(
+            "http://localhost:8082",
+            "http://192.168.1.10:8082",
+            "http://10.21.192.165:8082",
+            "exp://192.168.1.10:8082",
+            "exp://10.21.192.165:8082",
+            "http://localhost:19006",
+            "http://192.168.1.10:19006"
+        ));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 

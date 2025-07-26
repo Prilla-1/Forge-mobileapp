@@ -24,7 +24,8 @@ export interface Style {
   textDecorationLine?: 'none' | 'underline' | 'line-through' | 'underline line-through';
   rotation?: number;
   shadowOpacity?: number;
-  shadowRadius?: number
+  shadowRadius?: number;
+  textAlign?:string;
 }
 
 export interface ShapeType {
