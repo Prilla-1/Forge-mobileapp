@@ -1,17 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  TouchableOpacity,
-  Alert,
-  Dimensions,
-  ViewStyle,
-  TextStyle,
-  ImageStyle,
+import {View,Text,StyleSheet,Image,SafeAreaView, StatusBar,TouchableOpacity,Alert,Dimensions,ViewStyle,TextStyle,ImageStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';

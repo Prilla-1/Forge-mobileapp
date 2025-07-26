@@ -83,14 +83,15 @@ export default function LoginScreen() {
 
     const data = await response.json();
     const token = data.token;
-    const username = data.username; 
+    const username = data.name; 
 
     // ✅ Save user info to context
     setUser({ username });
 
     // (Optional) Save token to AsyncStorage
     await AsyncStorage.setItem('token', token);
-    
+    await AsyncStorage.setItem('username', username);
+
     router.replace('/(drawer)/(tabs)/mirror');
   } catch (err) {
     console.error('Login error:', err);

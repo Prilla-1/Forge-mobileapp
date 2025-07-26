@@ -12,54 +12,61 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState, useRef, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useUser } from '../context/UserContext';
 
-const DEFAULT_AVATAR = require('../assets/images/icon.png');
-const PROFILE_API_URL = 'http://your-api.com/api/users/me';
+const DEFAULT_AVATAR = require('../assets/images/profile-icon-png-898.png');
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { user, setUser } = useUser();
+
   const [name, setName] = useState('');
-  const [avatar, setAvatar] = useState(null);
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [editingName, setEditingName] = useState(false);
   const [dirty, setDirty] = useState(false);
   const nameInputRef = useRef(null);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(PROFILE_API_URL, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+ useEffect(() => {
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
 
-        if (!response.ok) throw new Error('Failed to fetch profile');
-
-        const data = await response.json();
-        setName(data.name || 'Unnamed User');
-        setAvatar(data.avatarUrl || null);
-        setEmail(data.email || '');
-      } catch (error) {
-        Alert.alert('Error', 'Unable to load profile.');
-      } finally {
-        setLoading(false);
+      // Get username from context or AsyncStorage
+      let username: string | undefined = user?.username;
+      if (!username) {
+        const storedUsername = await AsyncStorage.getItem('username');
+        username = storedUsername ?? undefined;
       }
-    };
+      if (username) setName(username);
 
-    fetchProfile();
-  }, []);
+      // Load avatar from AsyncStorage
+      const storedAvatar = await AsyncStorage.getItem('avatar');
+      if (storedAvatar) setAvatar(storedAvatar);
 
-  const handleLogout = () => {
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadProfile();
+}, []);
+
+  const handleLogout = async () => {
     Alert.alert('Log out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Log out',
         style: 'destructive',
-        onPress: () => router.replace('/login'),
+        onPress: async () => {
+          await AsyncStorage.clear();
+          setUser(null);
+          router.replace('/login');
+        },
       },
     ]);
   };
@@ -72,15 +79,9 @@ export default function SettingsScreen() {
     try {
       setEditingName(false);
       setDirty(false);
-
-      const response = await fetch(PROFILE_API_URL, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update name');
-      Alert.alert('Success', 'Profile updated successfully.');
+      setUser({ ...user, username: name });
+      await AsyncStorage.setItem('username', name);
+      Alert.alert('Success', 'Profile name updated.');
     } catch (error) {
       Alert.alert('Error', 'Failed to save profile.');
     }
@@ -159,11 +160,9 @@ export default function SettingsScreen() {
               {(name?.[0] || 'U').toUpperCase()}
             </Text>
           </View>
-
           <Text style={styles.teamName}>
             {name ? `${name}'s team` : 'Your team'}
           </Text>
-
           <Ionicons name="checkmark" size={20} color="#222" style={{ marginLeft: 'auto' }} />
         </View>
 
@@ -187,6 +186,7 @@ export default function SettingsScreen() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
