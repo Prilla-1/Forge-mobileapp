@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react
 import { useCanvas } from '../../../context/CanvasContext';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function TemplateScreen() {
   const { templates, loadTemplate } = useCanvas();
@@ -13,76 +14,80 @@ export default function TemplateScreen() {
     router.push('/(drawer)/(tabs)/CanvasScreen');
   };
 
+  const templateImages = [
+    require('../../../assets/images/template.png'),    // 1
+    require('../../../assets/images/template2.png'),  // 2
+    require('../../../assets/images/template3.png'),  // 3
+    require('../../../assets/images/template4.png'),  // 4
+    require('../../../assets/images/template3.png'),  // 5
+    require('../../../assets/images/template2.png'),  // 6
+    require('../../../assets/images/template.png'),   // 7
+  ];
+
   return (
-    <View style={styles.container}>
-      <View style={styles.headerWrap}>
-        <Text style={styles.headerTitle}>Templates</Text>
-        <Text style={styles.headerSubtitle}>
-          Discover amazing design templates for your next project
-        </Text>
-      </View>
-
-      <View style={styles.filterContainer}>
-        <TouchableOpacity style={[styles.filterButton, styles.activeFilter]}>
-          <Text style={[styles.filterText, styles.activeFilterText]}>All</Text>
-        </TouchableOpacity>
-      </View>
-
-      {templates.length === 0 ? (
-        <Text style={{ textAlign: 'center', marginTop: 20 }}>
-          No templates available.
-        </Text>
-      ) : (
-        <FlatList
-          data={templates}
-          keyExtractor={(_, index) => `template-${index}`}
-          numColumns={2}
-          contentContainerStyle={styles.grid}
-          renderItem={({ item, index }) => (
-            <TouchableOpacity style={styles.card} onPress={() => handleTemplateSelect(index)}>
-              <Image
-                source={item.image ?? require('../../../assets/images/template.png')}
-                style={styles.cardImage}
-              />
-              <TouchableOpacity style={styles.favoriteButton}>
-                <Ionicons name="heart-outline" size={20} color="#333" />
-              </TouchableOpacity>
-              <Text style={styles.cardTitle}>Template {index + 1}</Text>
+    <LinearGradient colors={["#E9D5FF", "#F6F2F7"]} style={{ flex: 1 }}>
+      <View style={styles.container}>
+        {/* Subtitle and Filter */}
+        <View style={styles.headerContent}>
+          <Text style={styles.headerSubtitle}>
+            Discover amazing design templates for your next project
+          </Text>
+          <View style={styles.filterContainer}>
+            <TouchableOpacity style={[styles.filterButton, styles.activeFilter]}>
+              <Text style={[styles.filterText, styles.activeFilterText]}>All</Text>
             </TouchableOpacity>
-          )}
-        />
-      )}
-    </View>
+          </View>
+        </View>
+
+        {/* Templates Grid */}
+        {templates.length === 0 ? (
+          <Text style={{ textAlign: 'center', marginTop: 20 }}>
+            No templates available.
+          </Text>
+        ) : (
+          <FlatList
+            data={templates}
+            keyExtractor={(_, index) => `template-${index}`}
+            numColumns={2}
+            contentContainerStyle={styles.grid}
+            renderItem={({ item, index }) => (
+              <TouchableOpacity style={styles.card} onPress={() => handleTemplateSelect(index)}>
+                <Image
+                  source={templateImages[index < 7 ? index : index % templateImages.length]}
+                  style={styles.cardImage}
+                />
+                <TouchableOpacity style={styles.favoriteButton}>
+                  <Ionicons name="heart-outline" size={20} color="#333" />
+                </TouchableOpacity>
+                <Text style={styles.cardTitle}>Template {index + 1}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        )}
+      </View>
+    </LinearGradient>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    // backgroundColor: '#fff',
     paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingTop: 20,
   },
-  headerWrap: {
-    marginTop: 12,
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
+  headerContent: {
+    marginBottom: 20,
   },
   headerSubtitle: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 8,
     textAlign: 'center',
+    marginBottom: 16,
   },
   filterContainer: {
     flexDirection: 'row',
-    marginBottom: 12,
+    alignSelf: 'flex-start',
   },
   filterButton: {
     paddingVertical: 8,
@@ -91,14 +96,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
   },
   activeFilter: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#2563eb', // blue
   },
   filterText: {
     fontSize: 14,
     color: '#333',
   },
   activeFilterText: {
-    color: '#fff',
+    color: '#FFD600', // yellow
     fontWeight: 'bold',
   },
   grid: {

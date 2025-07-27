@@ -16,10 +16,10 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${figmine.jwt.secret}")
+    @Value("${forge.jwt.secret}")
     private String secret;
 
-    @Value("${figmine.jwt.expiration}")
+    @Value("${forge.jwt.expiration}")
     private long jwtExpirationMs;
 
     // ✅ Generate token with optional extra claims

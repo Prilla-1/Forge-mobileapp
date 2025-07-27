@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
-import { View, StyleSheet, TouchableWithoutFeedback } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, StyleSheet, TouchableWithoutFeedback, Modal, TextInput, TouchableOpacity, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import Svg, { Line, G, Text as SvgText } from 'react-native-svg';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useCanvas } from '../../context/CanvasContext';

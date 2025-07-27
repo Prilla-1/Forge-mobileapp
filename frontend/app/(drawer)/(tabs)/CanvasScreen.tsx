@@ -18,7 +18,12 @@ export default function CanvasScreen() {
 const previewInMirror = async () => {
   try {
     const uri = await canvasRef.current.capture();
-    router.push({ pathname: "/mirror", params: { imageUri: uri } });
+    router.push({ pathname: "/mirror", params: {
+      imageUri: uri,
+      panX: panX.value,
+      panY: panY.value,
+      scale: scale.value,
+    }});
   } catch (e) {
     console.error("Failed to preview", e);
   }
@@ -125,24 +130,24 @@ const previewInMirror = async () => {
         <Animated.View style={{ flex: 1 }}>
           <PinchGestureHandler onGestureEvent={onPinchEvent}>
             <View style={styles.canvasContainer}>
-  <ViewShot ref={canvasRef} options={{ format: 'png', quality: 1 }} style={{ flex: 1 }}>
-    <Canvas
-      ref={canvasRef}
-      panX={panX}
-      panY={panY}
-      scale={scale}
-      onLongPress={handleLongPress}
-      onTap={handleShapeTap}
-      setPreviewLine={setPreviewLine}
-      connectMode={connectMode}
-      connectStartShapeId={connectStartShapeId}
-    />
-  </ViewShot>
-</View>
+      <ViewShot ref={canvasRef} options={{ format: 'png', quality: 1 }} style={{ flex: 1 }}>
+        <Canvas
+          ref={canvasRef}
+          panX={panX}
+          panY={panY}
+          scale={scale}
+          onLongPress={handleLongPress}
+          onTap={handleShapeTap}
+          setPreviewLine={setPreviewLine}
+          connectMode={connectMode}
+          connectStartShapeId={connectStartShapeId}
+        />
+      </ViewShot>
+    </View>
 
-          </PinchGestureHandler>
-        </Animated.View>
-      </PanGestureHandler>
+            </PinchGestureHandler>
+          </Animated.View>
+        </PanGestureHandler>
 
       {/* Zoom Controls */}
       <View style={styles.zoomControls}>
@@ -159,10 +164,10 @@ const previewInMirror = async () => {
         <TouchableOpacity onPress={undo}><Ionicons name="arrow-undo" size={28} color="black" /></TouchableOpacity>
         <TouchableOpacity onPress={redo}><Ionicons name="arrow-redo-sharp" size={28} color="black" /></TouchableOpacity>
         <TouchableOpacity onPress={() => addShape({ id: Date.now().toString(), type: 'rectangle', position: { x: 150, y: 150 }, style: { width: 150, height: 100, backgroundColor: '#3498db' } })}>
-          <Ionicons name="square-outline" size={28} color="black" />
+          <View style={styles.rectIcon} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => addShape({ id: Date.now().toString(), type: 'circle', position: { x: 200, y: 200 }, style: { width: 100, height: 100, backgroundColor: '#e74c3c', borderRadius: 50 } })}>
-          <Ionicons name="ellipse-outline" size={28} color="black" />
+        <TouchableOpacity onPress={() => addShape({ id: Date.now().toString(), type: 'oval', position: { x: 200, y: 200 }, style: { width: 140, height: 70, backgroundColor: '#e74c3c', borderRadius: 35 } })}>
+          <View style={styles.ovalIcon} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.push('/(drawer)/(tabs)/Templates')}>
           <Ionicons name="albums-outline" size={28} color="black" />
@@ -191,8 +196,14 @@ const previewInMirror = async () => {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, overflow: 'hidden' },
-  canvasContainer: { flex: 1, backgroundColor: '#F5F1E9' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#F5F1E9',
+  },
+  canvasContainer: { 
+    flex: 1, 
+    backgroundColor: '#F5F1E9' 
+  },
   zoomControls: {
     position: 'absolute',
     bottom: 110,
@@ -249,5 +260,23 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
     letterSpacing: 1,
+  },
+  rectIcon: {
+    width: 28,
+    height: 16,
+    borderWidth: 2,
+    borderColor: '#000',
+    backgroundColor: 'transparent',
+    borderRadius: 2,
+    marginRight: 8,
+  },
+  ovalIcon: {
+    width: 28,
+    height: 14,
+    borderWidth: 2,
+    borderColor: '#000',
+    backgroundColor: 'transparent',
+    borderRadius: 14,
+    marginLeft: 8,
   },
 });

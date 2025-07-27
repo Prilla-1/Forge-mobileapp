@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { ShapeType } from '../constants/type';
-import { API_BASE_URL } from '../constants/api';
+// import { API_BASE_URL } from '../constants/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface Project {
@@ -23,24 +23,48 @@ const getAuthHeaders = async () => {
 };
 
 export const getProjects = async (): Promise<Project[]> => {
-  const headers = await getAuthHeaders();
-  const response = await axios.get(`${API_BASE_URL}/projects`, headers);
-  return response.data;
+  // Mock implementation - no backend call
+  // const headers = await getAuthHeaders();
+  // const response = await axios.get(`${API_BASE_URL}/projects`, headers);
+  // return response.data;
+  
+  // Return empty array for mock
+  return [];
 };
 
 export const createProject = async (name: string, content: ShapeType[]): Promise<Project> => {
-  const headers = await getAuthHeaders();
-  const response = await axios.post(`${API_BASE_URL}/projects`, { name, content: JSON.stringify(content) }, headers);
-  return response.data;
+  // Mock implementation - no backend call
+  // const headers = await getAuthHeaders();
+  // const response = await axios.post(`${API_BASE_URL}/projects`, { name, content: JSON.stringify(content) }, headers);
+  // return response.data;
+  
+  // Return mock project
+  return {
+    id: Date.now(),
+    name,
+    content,
+  };
 };
 
 export const updateProject = async (id: number, name: string, content: ShapeType[]): Promise<Project> => {
-  const headers = await getAuthHeaders();
-  const response = await axios.put(`${API_BASE_URL}/projects/${id}`, { name, content: JSON.stringify(content) }, headers);
-  return response.data;
+  // Mock implementation - no backend call
+  // const headers = await getAuthHeaders();
+  // const response = await axios.put(`${API_BASE_URL}/projects/${id}`, { name, content: JSON.stringify(content) }, headers);
+  // return response.data;
+  
+  // Return mock project
+  return {
+    id,
+    name,
+    content,
+  };
 };
 
 export const deleteProject = async (id: number): Promise<void> => {
-  const headers = await getAuthHeaders();
-  await axios.delete(`${API_BASE_URL}/projects/${id}`, headers);
+  // Mock implementation - no backend call
+  // const headers = await getAuthHeaders();
+  // await axios.delete(`${API_BASE_URL}/projects/${id}`, headers);
+  
+  // Mock successful deletion
+  console.log(`Mock: Project ${id} deleted`);
 }; 

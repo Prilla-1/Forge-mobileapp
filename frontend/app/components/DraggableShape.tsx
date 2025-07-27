@@ -1,18 +1,17 @@
 import React, { useState, useEffect,useRef } from 'react';
 import { Image, Text, StyleSheet, View, TextInput, TouchableOpacity, Modal, ViewStyle } from 'react-native';
 import type { TextInput as RNTextInput } from 'react-native';
-import type { Ref } from 'react'
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {useSharedValue,useAnimatedStyle,withSpring,runOnJS,} from 'react-native-reanimated';
 import { useCanvas } from '../../context/CanvasContext';
 import { ShapeType } from '../../constants/type';
 import { Ionicons } from '@expo/vector-icons';
 import { generateUUID } from '@/utils/generateUUID';
+import Svg, { Polygon } from 'react-native-svg';
 
 const HANDLE_SIZE = 8;
 const MIN_SIZE = 40;
 const COLORS = ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6', '#34495e', '#fff', '#000'];
-const scaleFactor = 0.3;
 
 interface DraggableShapeProps {
   shape: ShapeType;
@@ -26,47 +25,191 @@ type Anchor = 'tl' | 'tr' | 'bl' | 'br' | 't' | 'b' | 'l' | 'r';
 type StartPos = { x: number; y: number };
 
 const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, setPreviewLine, onTap, connectMode }) => {
-  const [editTextModal, setEditTextModal] = useState(false);
-  const [editText, setEditText] = useState(shape.text || '');
   const [colorModal, setColorModal] = useState(false);
+  const [isEditingText, setIsEditingText] = useState(false);
+  const [editText, setEditText] = useState(shape.text || '');
   const { updateShape, selectedShapeId, setSelectedShapeId, addLine, shapes } = useCanvas();
+  const textInputRef = useRef<RNTextInput>(null);
   const isSelected = selectedShapeId === shape.id;
-  const [bold, setBold] = useState(false);
-  const [italic, setItalic] = useState(false);
-  const [underline, setUnderline] = useState(false);
 
-  useEffect(() => {
-    setEditText(shape.text || '');
-    setBold(shape.style?.fontWeight === 'bold');
-    setItalic(shape.style?.fontStyle === 'italic');
-    setUnderline(shape.style?.textDecorationLine === 'underline');
-  }, [shape.text, shape.id, shape.style]);
-
-  // Close modals if shape is deselected to prevent modal conflicts
-  useEffect(() => {
-  if (!isSelected) {
-    setEditTextModal(false);
-    setColorModal(false);
-  }
-}, [isSelected]);
-  if (shape.isVisible === false) return null;
-
+  // All React hooks must be called before any conditional returns
   const translateX = useSharedValue(shape.position.x);
   const translateY = useSharedValue(shape.position.y);
   const resizeWidth = useSharedValue(shape.style.width || 100);
   const resizeHeight = useSharedValue(shape.style.height || 100);
 
- 
-const baseHandleStyle = {
-  position: 'absolute' as const,
-  width: HANDLE_SIZE,
-  height: HANDLE_SIZE,
-  backgroundColor: '#fff',
-  borderRadius: 2,
-  borderColor: '#888',
-  borderWidth: 1,
-  zIndex: 10,
-};
+  // Animated styles - all hooks must be called before conditional returns
+  const animatedStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    left: translateX.value,
+    top: translateY.value,
+    width: resizeWidth.value,
+    height: resizeHeight.value,
+  }));
+
+  const toolbarStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    left: 0,
+    top: -40,
+    width: resizeWidth.value,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 30,
+  }));
+
+  const animatedTextStyle = useAnimatedStyle(() => {
+    const shapeSize = Math.min(resizeWidth.value, resizeHeight.value);
+    const fontSize = Math.max(8, shapeSize / 6);
+    return {
+      fontSize: fontSize,
+      color: shape.style?.color || '#333',
+      fontWeight: shape.style?.fontWeight || 'normal',
+      fontStyle: shape.style?.fontStyle || 'normal',
+      textDecorationLine: shape.style?.textDecorationLine || 'none',
+    };
+  });
+
+  // Animated styles for each handle
+  const handleTL = useAnimatedStyle(() => ({
+    position: 'absolute',
+    width: HANDLE_SIZE,
+    height: HANDLE_SIZE,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+    borderColor: '#888',
+    borderWidth: 1,
+    zIndex: 10,
+    left: -HANDLE_SIZE / 2,
+    top: -HANDLE_SIZE / 2,
+  }));
+
+  const handleTR = useAnimatedStyle(() => ({
+    position: 'absolute',
+    width: HANDLE_SIZE,
+    height: HANDLE_SIZE,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+    borderColor: '#888',
+    borderWidth: 1,
+    zIndex: 10,
+    left: resizeWidth.value - HANDLE_SIZE / 2,
+    top: -HANDLE_SIZE / 2,
+  }));
+
+  const handleBL = useAnimatedStyle(() => ({
+    position: 'absolute',
+    width: HANDLE_SIZE,
+    height: HANDLE_SIZE,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+    borderColor: '#888',
+    borderWidth: 1,
+    zIndex: 10,
+    left: -HANDLE_SIZE / 2,
+    top: resizeHeight.value - HANDLE_SIZE / 2,
+  }));
+
+  const handleBR = useAnimatedStyle(() => ({
+    position: 'absolute',
+    width: HANDLE_SIZE,
+    height: HANDLE_SIZE,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+    borderColor: '#888',
+    borderWidth: 1,
+    zIndex: 10,
+    left: resizeWidth.value - HANDLE_SIZE / 2,
+    top: resizeHeight.value - HANDLE_SIZE / 2,
+  }));
+
+  const handleT = useAnimatedStyle(() => ({
+    position: 'absolute',
+    width: HANDLE_SIZE,
+    height: HANDLE_SIZE,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+    borderColor: '#888',
+    borderWidth: 1,
+    zIndex: 10,
+    left: (resizeWidth.value - HANDLE_SIZE) / 2,
+    top: -HANDLE_SIZE / 2,
+  }));
+
+  const handleB = useAnimatedStyle(() => ({
+    position: 'absolute',
+    width: HANDLE_SIZE,
+    height: HANDLE_SIZE,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+    borderColor: '#888',
+    borderWidth: 1,
+    zIndex: 10,
+    left: (resizeWidth.value - HANDLE_SIZE) / 2,
+    top: resizeHeight.value - HANDLE_SIZE / 2,
+  }));
+
+  const handleL = useAnimatedStyle(() => ({
+    position: 'absolute',
+    width: HANDLE_SIZE,
+    height: HANDLE_SIZE,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+    borderColor: '#888',
+    borderWidth: 1,
+    zIndex: 10,
+    left: -HANDLE_SIZE / 2,
+    top: (resizeHeight.value - HANDLE_SIZE) / 2,
+  }));
+
+  const handleR = useAnimatedStyle(() => ({
+    position: 'absolute',
+    width: HANDLE_SIZE,
+    height: HANDLE_SIZE,
+    backgroundColor: '#fff',
+    borderRadius: 2,
+    borderColor: '#888',
+    borderWidth: 1,
+    zIndex: 10,
+    left: resizeWidth.value - HANDLE_SIZE / 2,
+    top: (resizeHeight.value - HANDLE_SIZE) / 2,
+  }));
+
+  // Close modals if shape is deselected to prevent modal conflicts
+  useEffect(() => {
+  if (!isSelected) {
+    setColorModal(false);
+    setIsEditingText(false);
+  }
+}, [isSelected]);
+
+  // Update edit text when shape text changes
+  useEffect(() => {
+    console.log('Shape text changed:', shape.text); // Debug log
+    setEditText(shape.text || '');
+  }, [shape.text]);
+
+  // Focus TextInput when editing starts
+  useEffect(() => {
+    if (isEditingText && textInputRef.current) {
+      setTimeout(() => {
+        textInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isEditingText]);
+
+  // Additional focus effect when component mounts and isEditingText is true
+  useEffect(() => {
+    if (isEditingText) {
+      const timer = setTimeout(() => {
+        textInputRef.current?.focus();
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isEditingText]);
+
+  // Early return after all hooks
+  if (shape.isVisible === false) return null;
   const baseStyle: ViewStyle = {
     backgroundColor: shape.style?.backgroundColor || '#ccc',
     borderRadius: shape.type === 'circle' || shape.type === 'oval' ? 999 : (shape.style?.borderRadius || 0),
@@ -86,7 +229,7 @@ const baseHandleStyle = {
     Gesture.Pan()
       .onBegin(() => runOnJS(setSelectedShapeId)(shape.id))
       .onUpdate((event) => {
-  const scaleFactor = 0.2;
+  const scaleFactor = 0.05;
 
   let newWidth = resizeWidth.value;
   let newHeight = resizeHeight.value;
@@ -121,10 +264,13 @@ const baseHandleStyle = {
 .onEnd(updatePositionAndSize);
 
   const panGesture = Gesture.Pan()
-    .onBegin(() => runOnJS(setSelectedShapeId)(shape.id))
+    .onBegin(() => {
+      if (isEditingText) return; // Don't start pan if editing text
+      runOnJS(setSelectedShapeId)(shape.id);
+    })
     .onUpdate((event) => {
-      const scaleFactor=0.2;
-      if (shape.isLocked) return;
+      if (isEditingText || shape.isLocked) return; // Don't pan if editing text
+      const scaleFactor=1;
       translateX.value = withSpring((event.translationX*scaleFactor) + shape.position.x);
       translateY.value = withSpring((event.translationY*scaleFactor) + shape.position.y);
     })
@@ -149,89 +295,6 @@ const baseHandleStyle = {
         runOnJS(setPreviewLine)(null);
       });
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    position: 'absolute',
-    left: translateX.value,
-    top: translateY.value,
-    width: resizeWidth.value,
-    height: resizeHeight.value,
-  }));
-
-  const toolbarStyle = useAnimatedStyle(() => ({
-        position: 'absolute',
-    left: 0,
-    top: -40,
-    width: resizeWidth.value,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 30,
-  }));
-
-  const animatedTextStyle = useAnimatedStyle(() => {
-    const shapeSize = Math.min(resizeWidth.value, resizeHeight.value);
-    const fontSize = Math.max(8, shapeSize / 6);
-    return {
-      fontSize: fontSize,
-      color: shape.style?.color || '#333',
-      fontWeight: bold ? 'bold' : 'normal',
-      fontStyle: italic ? 'italic' : 'normal',
-      textDecorationLine: underline ? 'underline' : 'none',
-    };
-  });
-
-  // Animated styles for each handle
-  
-const handleTL = useAnimatedStyle(() => ({
-  ...baseHandleStyle,
-  left: -HANDLE_SIZE / 2,
-  top: -HANDLE_SIZE / 2,
-}));
-
-const handleTR = useAnimatedStyle(() => ({
-  ...baseHandleStyle,
-  left: resizeWidth.value - HANDLE_SIZE / 2,
-  top: -HANDLE_SIZE / 2,
-}));
-
-const handleBL = useAnimatedStyle(() => ({
-  ...baseHandleStyle,
-  left: -HANDLE_SIZE / 2,
-  top: resizeHeight.value - HANDLE_SIZE / 2,
-}));
-
-const handleBR = useAnimatedStyle(() => ({
-  ...baseHandleStyle,
-  left: resizeWidth.value - HANDLE_SIZE / 2,
-  top: resizeHeight.value - HANDLE_SIZE / 2,
-}));
-
-const handleT = useAnimatedStyle(() => ({
-  ...baseHandleStyle,
-  left: (resizeWidth.value - HANDLE_SIZE) / 2,
-  top: -HANDLE_SIZE / 2,
-}));
-
-const handleB = useAnimatedStyle(() => ({
-  ...baseHandleStyle,
-  left: (resizeWidth.value - HANDLE_SIZE) / 2,
-  top: resizeHeight.value - HANDLE_SIZE / 2,
-}));
-
-const handleL = useAnimatedStyle(() => ({
-  ...baseHandleStyle,
-  left: -HANDLE_SIZE / 2,
-  top: (resizeHeight.value - HANDLE_SIZE) / 2,
-}));
-
-const handleR = useAnimatedStyle(() => ({
-  ...baseHandleStyle,
-  left: resizeWidth.value - HANDLE_SIZE / 2,
-  top: (resizeHeight.value - HANDLE_SIZE) / 2,
-}));
-  // Ref for TextInput to blur on save
-  const textInputRef = React.useRef<TextInput>(null);
-
   // Pinch-to-resize gesture
   const pinchGesture = Gesture.Pinch()
     .onUpdate((event) => {
@@ -248,6 +311,7 @@ const handleR = useAnimatedStyle(() => ({
 });
   // Combine pan and pinch gestures
   const panAndPinch = Gesture.Simultaneous(panGesture, pinchGesture);
+  const noOpGesture = Gesture.Pan().onBegin(() => {});
 
   // Tap handler for connect mode or normal selection
   const handleTap = () => {
@@ -257,85 +321,37 @@ const handleR = useAnimatedStyle(() => ({
       setSelectedShapeId(shape.id);
     }
   };
+
+  // Text editing handlers
+  const handleStartTextEdit = () => {
+    setIsEditingText(true);
+    setEditText(shape.text || '');
+    // Focus the TextInput after a short delay to ensure the component is rendered
+    setTimeout(() => {
+      textInputRef.current?.focus();
+    }, 100);
+    // Additional focus attempt with longer delay
+    setTimeout(() => {
+      textInputRef.current?.focus();
+    }, 300);
+    // Third attempt to ensure focus
+    setTimeout(() => {
+      textInputRef.current?.focus();
+    }, 500);
+  };
+
+  const handleSaveText = () => {
+    console.log('Saving text:', editText); // Debug log
+    if (editText.trim()) {
+      updateShape(shape.id, { text: editText.trim() });
+    }
+    setIsEditingText(false);
+  };
   
   return (
     <>
       {isSelected && (
         <>
-          {/* Global Modal for Text Editing */}
-        <Modal
-  visible={editTextModal}
-  transparent
-  animationType="fade"
-  onRequestClose={() => setEditTextModal(false)}
->
-  <View style={[styles.modalOverlay]}>
-    <View style={styles.modalContent}>
-      <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Edit Text</Text>
-
-      {/* Toolbar */}
-      <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 8 }}>
-        <TouchableOpacity
-          onPress={() => setBold(b => !b)}
-          style={[styles.toolbarBtn, bold && { backgroundColor: '#eee' }]}
-        >
-          <Text style={{ fontWeight: 'bold' }}>B</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setItalic(i => !i)}
-          style={[styles.toolbarBtn, italic && { backgroundColor: '#eee' }]}
-        >
-          <Text style={{ fontStyle: 'italic' }}>I</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setUnderline(u => !u)}
-          style={[styles.toolbarBtn, underline && { backgroundColor: '#eee' }]}
-        >
-          <Text style={{ textDecorationLine: 'underline' }}>U</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TextInput
-        ref={textInputRef as React.Ref<TextInput>}
-        value={editText}
-        onChangeText={setEditText}
-        autoFocus
-        style={[
-          styles.textInput,
-          {
-            textAlign: 'center',
-            fontWeight: bold ? 'bold' : 'normal',
-            fontStyle: italic ? 'italic' : 'normal',
-            textDecorationLine: underline ? 'underline' : 'none',
-          },
-        ]}
-      />
-
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
-        <TouchableOpacity onPress={() => setEditTextModal(false)} style={styles.cancelBtn}>
-          <Text>Cancel</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.saveBtn}
-          onPress={() => {
-           updateShape(shape.id, {
-              text: editText,
-               style: {
-             ...(shape.style || {}),
-              fontWeight: bold ? 'bold' : 'normal',
-               fontStyle: italic ? 'italic' : 'normal',
-                textDecorationLine: underline ? 'underline' : 'none', },
-                     });
-            setEditTextModal(false);
-          }}
-        >
-          <Text style={{ color: 'white' }}>Save</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </View>
-</Modal>
-
           {/* Color Picker Modal */}
           <Modal
             visible={colorModal}
@@ -363,13 +379,13 @@ const handleR = useAnimatedStyle(() => ({
                         try {
                           updateShape(shape.id, {
                              style: {
-                         ...shape.style, 
-                              backgroundColor: color,
-                                 },
-                         });
-                       } finally {
-                      setColorModal(false);
-                          }}}
+                          ...shape.style, 
+                               backgroundColor: color,
+                                  },
+                          });
+                        } finally {
+                       setColorModal(false);
+                           }}}
                     />
                   ))}
                 </View>
@@ -381,57 +397,193 @@ const handleR = useAnimatedStyle(() => ({
           </Modal>
         </>
       )}
-      <GestureDetector gesture={panAndPinch}>
+      <GestureDetector gesture={isEditingText ? noOpGesture : panAndPinch}>
         <Animated.View style={[animatedStyle, styles.shapeContainer]}>
-          <TouchableOpacity activeOpacity={1} style={{ flex: 1 }} onPress={handleTap}>
-            <Animated.View style={[styles.shape, baseStyle, diamondOuterStyle, isSelected && !shape.isLocked && styles.selectedBorder]}>
-              <View style={[styles.contentContainer, diamondInnerStyle]}>
-                {(shape.type === 'rectangle' || shape.type === 'circle' || shape.type === 'text' || shape.type === 'oval' || shape.type === 'diamond') && shape.text && (
-                  <Animated.Text style={[styles.shapeText, animatedTextStyle]}>{shape.text}</Animated.Text>
-                )}
-                {/* Kite shape: render as a diamond (rotated square) */}
-                {shape.type === 'kite' && (
-                  <View style={{
-                    width: '100%',
-                    height: '100%',
-                    backgroundColor: shape.style?.backgroundColor || '#3498db',
-                    transform: [{ rotate: '45deg' }],
-                    borderRadius: 8,
-                  }} />
-                )}
-                {/* Arrow shape: render as a right-pointing arrow */}
-                {shape.type === 'arrow' && (
-                  <View style={{
-                    width: '100%',
-                    height: '100%',
+          <TouchableOpacity 
+            activeOpacity={1} 
+            style={{ flex: 1 }} 
+            onPress={isEditingText ? undefined : handleTap}
+            disabled={isEditingText}
+          >
+            {/* Render kite as SVG with overlayed text or text input */}
+            {shape.type === 'kite' ? (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Svg width="100%" height="100%" viewBox="0 0 100 100" style={StyleSheet.absoluteFill}>
+                  <Polygon
+                    points="50,0 100,50 50,100 0,50"
+                    fill={shape.style?.backgroundColor || '#3498db'}
+                    stroke="#34495e"
+                    strokeWidth="2"
+                  />
+                </Svg>
+                {isEditingText ? (
+                  <View style={{ 
+                    width: '80%', 
+                    height: '60%', 
                     justifyContent: 'center',
                     alignItems: 'center',
                   }}>
-                    <View style={{
-                      width: '60%',
-                      height: 10,
-                      backgroundColor: shape.style?.backgroundColor || '#3498db',
-                    }} />
-                    <View style={{
-                      position: 'absolute',
-                      right: 0,
-                      width: 0,
-                      height: 0,
-                      borderTopWidth: 15,
-                      borderBottomWidth: 15,
-                      borderLeftWidth: 20,
-                      borderTopColor: 'transparent',
-                      borderBottomColor: 'transparent',
-                      borderLeftColor: shape.style?.backgroundColor || '#3498db',
-                    }} />
+                    <TextInput
+                      ref={textInputRef}
+                      value={editText}
+                      onChangeText={setEditText}
+                      autoFocus={true}
+                      multiline={true}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        textAlign: 'center',
+                        textAlignVertical: 'center',
+                        fontSize: Math.max(12, Math.min(resizeWidth.value, resizeHeight.value) / 8),
+                        fontWeight: 'bold',
+                        color: '#333',
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        borderWidth: 2,
+                        borderColor: '#007AFF',
+                        borderRadius: 4,
+                        padding: 4,
+                        minHeight: 40,
+                      }}
+                      onBlur={handleSaveText}
+                      onEndEditing={handleSaveText}
+                      placeholder="Enter text..."
+                      placeholderTextColor="#999"
+                    />
+                    <TouchableOpacity 
+                      style={{
+                        position: 'absolute',
+                        top: 4,
+                        right: 4,
+                        backgroundColor: '#007AFF',
+                        borderRadius: 12,
+                        padding: 4,
+                        zIndex: 10,
+                      }}
+                      onPress={handleSaveText}
+                    >
+                      <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>Save</Text>
+                    </TouchableOpacity>
                   </View>
+                ) : (
+                  shape.text && shape.text.trim() && (
+                    <Text style={{
+                      position: 'absolute',
+                      width: '80%',
+                      textAlign: 'center',
+                      textAlignVertical: 'center',
+                      fontWeight: 'bold',
+                      color: '#000',
+                      fontSize: Math.max(12, Math.min(resizeWidth.value, resizeHeight.value) / 8),
+                      includeFontPadding: false,
+                    }}>
+                      {shape.text}
+                    </Text>
+                  )
                 )}
               </View>
-            </Animated.View>
+            ) : (
+              <Animated.View style={[styles.shape, baseStyle, diamondOuterStyle, isSelected && !shape.isLocked && styles.selectedBorder]}>
+                <View style={[styles.contentContainer, diamondInnerStyle]}>
+                  {/* Text editing for ALL shape types */}
+                  {isEditingText ? (
+                    <View style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      padding: 8,
+                    }}>
+                      <TextInput
+                        ref={textInputRef}
+                        value={editText}
+                        onChangeText={setEditText}
+                        autoFocus={true}
+                        multiline={true}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          textAlign: 'center',
+                          textAlignVertical: 'center',
+                          fontSize: Math.max(12, Math.min(resizeWidth.value, resizeHeight.value) / 8),
+                          fontWeight: 'bold',
+                          color: '#333',
+                          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                          borderWidth: 2,
+                          borderColor: '#007AFF',
+                          borderRadius: 4,
+                          padding: 4,
+                          minHeight: 40,
+                        }}
+                        onBlur={handleSaveText}
+                        onEndEditing={handleSaveText}
+                        placeholder="Enter text..."
+                        placeholderTextColor="#999"
+                      />
+                      <TouchableOpacity 
+                        style={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          backgroundColor: '#007AFF',
+                          borderRadius: 12,
+                          padding: 4,
+                          zIndex: 10,
+                        }}
+                        onPress={handleSaveText}
+                      >
+                        <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>Save</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    // Show existing text for all shape types
+                    shape.text && shape.text.trim() && (
+                      <Animated.Text style={[styles.shapeText, animatedTextStyle, { 
+                        width: '100%', 
+                        height: '100%', 
+                        textAlign: 'center',
+                        textAlignVertical: 'center',
+                        includeFontPadding: false,
+                        fontWeight: 'bold',
+                        color: '#000', // Dark text for better visibility
+                      }]}> 
+                        {shape.text}
+                      </Animated.Text>
+                    )
+                  )}
+                  {/* Arrow shape: render as a right-pointing arrow */}
+                  {shape.type === 'arrow' && (
+                    <View style={{
+                      width: '100%',
+                      height: '100%',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                      <View style={{
+                        width: '60%',
+                        height: 10,
+                        backgroundColor: shape.style?.backgroundColor || '#3498db',
+                      }} />
+                      <View style={{
+                        position: 'absolute',
+                        right: 0,
+                        width: 0,
+                        height: 0,
+                        borderTopWidth: 15,
+                        borderBottomWidth: 15,
+                        borderLeftWidth: 20,
+                        borderTopColor: 'transparent',
+                        borderBottomColor: 'transparent',
+                        borderLeftColor: shape.style?.backgroundColor || '#3498db',
+                      }} />
+                    </View>
+                  )}
+                </View>
+              </Animated.View>
+            )}
             <Animated.View style={toolbarStyle}>
               {isSelected && !shape.isLocked && (
                 <>
-                  <TouchableOpacity style={styles.toolbarBtn} onPress={() => setEditTextModal(true)}>
+                  <TouchableOpacity style={styles.toolbarBtn} onPress={handleStartTextEdit}>
                     <Ionicons name="pencil" size={20} color="#333" />
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.toolbarBtn} onPress={() => setColorModal(true)}>

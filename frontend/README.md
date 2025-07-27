@@ -1,4 +1,4 @@
- # Figma Clone App
+# Figma Clone App
 
 This is the `figmine` mobile app project — a clone of the Figma mobile interface.
 

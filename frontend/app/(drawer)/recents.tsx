@@ -1,81 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { ActivityIndicator,Animated, FlatList,Image,RefreshControl,SafeAreaView,StatusBar, StyleSheet,Text,TouchableOpacity,View,ScrollView} from 'react-native';
 import { useRouter } from 'expo-router';
-
-const mockData = [
-  {
-    id: '1',
-    title: 'Landing Page',
-    description: 'Website prototype',
-    date: 'June 5, 2025',
-    type: 'Prototype',
-    thumbnails: [
-      require('../../assets/images/thumbnail1.png'),
-    ],
-    favorite: false,
-  },
-  {
-    id: '2',
-    title: 'Figma Redesign',
-    description: 'Mobile app UI',
-    date: 'June 4, 2025',
-    type: 'Design File',
-    thumbnails: [
-      require('../../assets/images/thumbnail2.png'),
-    ],
-    favorite: false,
-  },
-  {
-    id: '3',
-    title: 'Marketing Banner',
-    description: 'Promotional design',
-    date: 'June 3, 2025',
-    type: 'Design File',
-    thumbnails: [
-      require('../../assets/images/thumbnail3.png'),
-    ],
-    favorite: false,
-  },
-  {
-    id: '4',
-    title: 'App Icon Concepts',
-    description: 'Icon set for new app',
-    date: 'June 2, 2025',
-    type: 'Design File',
-    thumbnails: [
-      require('../../assets/images/thumbnail4.png'),
-    ],
-    favorite: false,
-  },
-  {
-    id: '5',
-    title: 'New File',
-    description: 'Some description',
-    date: 'June 1, 2025',
-    type: 'Design File',
-    thumbnails: [],
-    favorite: false,
-  },
-  // Add as many items as you want!
-].map(item => ({ ...item, favorite: false }));
+import { mockProjects as baseMockProjects } from '../../mockProjects';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFonts } from 'expo-font';
+import { useProjectContext, Project } from '../../context/ProjectContext';
 
 function Header() {
-  const router = useRouter();
-  return (
-    <View style={styles.header}>
-      <TouchableOpacity onPress={() => router.push('/settings')}>
-        <Ionicons name="person-circle-outline" size={24} color="#333" />
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>Recents</Text>
-      <TouchableOpacity onPress={() => {}}>
-        <Ionicons name="search-outline" size={24} color="#333" />
-      </TouchableOpacity>
-    </View>
-  );
+  return null;
 }
 
-const SkeletonItem = () => {
+const SkeletonItem = React.memo(() => {
   const animatedValue = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
@@ -109,9 +45,15 @@ const SkeletonItem = () => {
       </View>
     </Animated.View>
   );
-};
+});
 
-const RecentsSkeletonLoader = () => {
+const RecentsSkeletonLoader = React.memo(() => {
+  const skeletonItems = useMemo(() => {
+    return [1, 2, 3].map((_, index) => (
+      <SkeletonItem key={index} />
+    ));
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: '#fff', marginTop: StatusBar.currentHeight || 0 }}>
       <View style={styles.skeletonHeader}>
@@ -122,15 +64,29 @@ const RecentsSkeletonLoader = () => {
       
       <View style={styles.skeletonSectionHeader} />
       
-      {[1, 2, 3].map((_, index) => (
-        <SkeletonItem key={index} />
-      ))}
+      {skeletonItems}
     </View>
   );
+});
+
+const FontLoader = ({ children }: { children: React.ReactNode }) => {
+  const [fontsLoaded] = useFonts({
+    'SpaceMono-Regular': require('../../assets/fonts/SpaceMono-Regular.ttf'),
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator size="large" color="#A07BB7" />
+      </View>
+    );
+  }
+
+  return <>{children}</>;
 };
 
-export default function RecentsScreen() {
-  const [data, setData] = useState(mockData);
+const RecentsContent = React.memo(() => {
+  const { projects, setProjects } = useProjectContext();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -151,75 +107,84 @@ export default function RecentsScreen() {
     }, 1500);
   }, []);
 
-  const toggleFavorite = (id: string) => {
-    setData(prevData =>
-      prevData.map(item =>
-        item.id === id ? { ...item, favorite: !item.favorite } : item
-      )
-    );
-  };
+  const toggleFavorite = useCallback((id: string) => {
+    setProjects((prev: Project[]) => prev.map((p: Project) =>
+      p.id === id ? { ...p, favorite: !p.favorite } : p
+    ));
+  }, [setProjects]);
 
-  const renderItem = ({ item }: any) => (
+  const renderItem = useCallback(({ item }: { item: Project }) => (
     <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.8}
+      style={styles.cardModern}
+      activeOpacity={0.85}
       onPress={() => router.push(`/file-details/${item.id}`)}
     >
       <Image
-        source={item.thumbnails[0]}
-        style={styles.thumbnail}
+        source={item.thumbnail}
+        style={styles.thumbnailModern}
         resizeMode="cover"
       />
-      <View style={styles.cardContent}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
-          <TouchableOpacity onPress={() => toggleFavorite(item.id)} style={{ marginLeft: 8 }}>
+      <View style={styles.cardContentModern}>
+        <Text style={styles.titleModern} numberOfLines={1}>{item.title}</Text>
+        <Text style={styles.metaModern} numberOfLines={2}>{item.description}</Text>
+        <View style={styles.cardActions}>
+          <TouchableOpacity onPress={() => toggleFavorite(item.id)}>
             <Ionicons
               name={item.favorite ? 'star' : 'star-outline'}
-              size={20}
-              color={item.favorite ? '#FFD600' : '#888'}
+              size={22}
+              color={item.favorite ? '#FFD600' : '#A07BB7'}
             />
           </TouchableOpacity>
+          <Text style={styles.commentsCount}>{item.comments.length} comments</Text>
         </View>
-        <Text style={styles.meta} numberOfLines={1}>{item.description} • {item.date}</Text>
       </View>
     </TouchableOpacity>
-  );
+  ), [router, toggleFavorite]);
 
-  const renderSection = (title: string, items: any[]) => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {items.map((item) => (
-        <View key={item.id}>
-          {renderItem({ item })}
-        </View>
-      ))}
-    </View>
-  );
-
-  const favorites = data.filter(item => item.favorite);
-  const prototypes = data.filter(item => item.type === 'Prototype' && !item.favorite);
-  const designFiles = data.filter(item => item.type === 'Design File' && !item.favorite);
+  const favorites = useMemo(() => projects.filter((item: Project) => item.favorite), [projects]);
+  const nonFavorites = useMemo(() => projects.filter((item: Project) => !item.favorite), [projects]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {loading ? (
-        <RecentsSkeletonLoader />
-      ) : (
-        <>
-          <Header />
+    <LinearGradient colors={["#E9D5FF", "#F6F2F7"]} style={styles.gradient}>
+      <SafeAreaView style={styles.safeArea}>
+        {loading ? (
+          <RecentsSkeletonLoader />
+        ) : (
           <ScrollView
+            contentContainerStyle={{ paddingTop: 8, paddingBottom: 24 }}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
+            showsVerticalScrollIndicator={false}
           >
-            {favorites.length > 0 && renderSection('Favorites', favorites)}
-            {prototypes.length > 0 && renderSection('Recent Prototypes', prototypes)}
-            {designFiles.length > 0 && renderSection('Recent Files', designFiles)}
+            {favorites.length > 0 && (
+              <>
+                <Text style={styles.favoritesTitle}>Favorites</Text>
+                {favorites.map((item: Project) => (
+                  <View key={item.id}>
+                    {renderItem({ item })}
+                  </View>
+                ))}
+                {nonFavorites.length > 0 && <View style={styles.divider} />}
+              </>
+            )}
+            {nonFavorites.map((item: Project) => (
+              <View key={item.id}>
+                {renderItem({ item })}
+              </View>
+            ))}
           </ScrollView>
-        </>
-      )}
-    </SafeAreaView>
+        )}
+      </SafeAreaView>
+    </LinearGradient>
+  );
+});
+
+export default function RecentsScreen() {
+  return (
+    <FontLoader>
+      <RecentsContent />
+    </FontLoader>
   );
 }
 
@@ -357,5 +322,95 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#fff',
+  },
+  cardModern: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    marginHorizontal: 14,
+    marginVertical: 8,
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    borderRadius: 20,
+    shadowColor: '#A07BB7',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.13,
+    shadowRadius: 18,
+    elevation: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(160,123,183,0.07)',
+  },
+  thumbnailModern: {
+    width: 64,
+    height: 64,
+    borderRadius: 14,
+    backgroundColor: '#eee',
+    borderWidth: 1,
+    borderColor: '#e9d7f7',
+  },
+  cardContentModern: {
+    flex: 1,
+    marginLeft: 18,
+    justifyContent: 'center',
+    fontFamily: 'JetBrainsMono-Medium',
+  },
+  titleModern: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#6C47A6',
+    marginBottom: 4,
+    fontFamily: 'SpaceMono-Regular',
+    letterSpacing: 0.2,
+  },
+  metaModern: {
+    fontSize: 14,
+    color: '#888',
+    marginBottom: 8,
+    // Use system font for meta
+  },
+  cardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    gap: 8,
+  },
+  commentsCount: {
+    fontSize: 13,
+    color: '#A07BB7',
+    marginLeft: 12,
+    fontWeight: '600',
+    // Use system font for comments count
+  },
+  headerSimple: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  headerTitleSimple: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#6C47A6',
+    letterSpacing: 1,
+  },
+  favoritesTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#6C47A6',
+    marginLeft: 18,
+    marginTop: 8,
+    marginBottom: 2,
+    fontFamily: 'SpaceMono-Regular',
+  },
+  divider: {
+    height: 2,
+    backgroundColor: '#111',
+    marginVertical: 10,
+    marginHorizontal: 18,
+    borderRadius: 2,
+  },
+  gradient: {
+    flex: 1,
   },
 });

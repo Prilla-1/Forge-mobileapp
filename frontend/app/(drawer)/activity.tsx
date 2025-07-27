@@ -2,30 +2,20 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, SafeAreaView, StatusBar, Image, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useProjectContext, Activity, Project } from '../../context/ProjectContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Swipeable } from 'react-native-gesture-handler';
 
 export default function ActivityScreen() {
-  // Mock activity data
-  const [activities, setActivities] = useState([
-    {
-      id: '1',
-      text: 'Jane commented on Mobile App UI',
-      time: '2h ago',
-      unread: true,
-    },
-    {
-      id: '2',
-      text: 'You were added to Team Project 1',
-      time: '1d ago',
-      unread: false,
-    },
-  ]);
+  const { activities, projects, setActivities } = useProjectContext();
   const [selectedTab, setSelectedTab] = useState<'all' | 'unread'>('all');
-  const avatarUrl = null; // Replace with a real URL to test image avatar
+  const avatarUrl = null;
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
 
-  // Calculate unread count
-  const unreadCount = activities.filter(a => a.unread).length;
+  // For demo, all activities are 'read'. You can add unread logic if needed.
+  const visibleActivities = activities;
+  const unreadCount = 0;
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
@@ -35,7 +25,6 @@ export default function ActivityScreen() {
   }, []);
 
   const handleActivityPress = (id: string) => {
-    setActivities(prev => prev.map(a => a.id === id ? { ...a, unread: false } : a));
     // For demo: show alert or log
     if (typeof window !== 'undefined' && window.alert) {
       window.alert('Viewing activity details (placeholder)');
@@ -44,81 +33,97 @@ export default function ActivityScreen() {
     }
   };
 
-  const visibleActivities = selectedTab === 'all'
-    ? activities
-    : activities.filter(a => a.unread);
-
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        contentContainerStyle={{ flexGrow: 1 }}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Activity</Text>
-          <TouchableOpacity style={styles.avatarButton} onPress={() => router.push('/settings')}>
-            {avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
-            ) : (
-              <Ionicons name="person-circle-outline" size={32} color="#00C853" />
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Tabs */}
-        <View style={styles.tabs}>
-          <Pressable onPress={() => setSelectedTab('all')}>
-            <Text style={[styles.tabText, selectedTab === 'all' && styles.activeTab]}>
-              All
-            </Text>
-          </Pressable>
-          <Pressable onPress={() => setSelectedTab('unread')} style={styles.unreadTab}>
-            <Text style={[styles.tabText, selectedTab === 'unread' && styles.activeTab]}>
-              Unread ({unreadCount})
-            </Text>
-            {unreadCount > 0 && <View style={styles.unreadDot} />}
-          </Pressable>
-        </View>
-
-        {/* Divider */}
-        <View style={styles.divider} />
-
-        {/* Activity List */}
-        {visibleActivities.length > 0 ? (
-          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-            {visibleActivities.map(activity => (
-              <TouchableOpacity
-                key={activity.id}
-                style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18, opacity: activity.unread ? 1 : 0.6 }}
-                onPress={() => handleActivityPress(activity.id)}
-                activeOpacity={0.7}
-              >
-                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: activity.unread ? '#FF3B30' : 'transparent', marginRight: 12 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 15, fontWeight: activity.unread ? '600' : '400', color: '#222' }}>{activity.text}</Text>
-                  <Text style={{ fontSize: 13, color: '#888', marginTop: 2 }}>{activity.time}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+    <LinearGradient colors={["#F6F2F7", "#E9D7F7", "#A07BB7"]} style={styles.gradient}>
+      <SafeAreaView style={styles.container}>
+        <ScrollView
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header Section */}
+          <View style={styles.headerSection}>
+            <Text style={styles.headerSubtitle}>Stay updated with project activities</Text>
           </View>
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>You're all caught up</Text>
-            <Text style={styles.emptySubtitle}>Check back later for new updates.</Text>
-          </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+
+          {/* Clean top area, no header/profile/tabs */}
+          <View style={styles.divider} />
+
+          {/* Activity List */}
+          {visibleActivities.length > 0 ? (
+            <View style={{ paddingHorizontal: 10, paddingTop: 12 }}>
+              {visibleActivities.map((activity: Activity) => {
+                const project = projects.find((p: Project) => p.id === activity.projectId);
+                return (
+                  <Swipeable
+                    key={activity.id}
+                    renderRightActions={() => (
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => {
+                          setActivities((prev: Activity[]) => prev.filter((a: Activity) => a.id !== activity.id));
+                        }}
+                      >
+                        <Ionicons name="trash" size={22} color="#fff" />
+                      </TouchableOpacity>
+                    )}
+                  >
+                    <TouchableOpacity
+                      style={styles.activityCard}
+                      onPress={() => handleActivityPress(activity.id)}
+                      activeOpacity={0.8}
+                    >
+                      <View style={styles.activityIconWrap}>
+                        <Ionicons name="chatbubble-ellipses-outline" size={22} color="#A07BB7" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        {activity.type === 'comment' ? (
+                          <>
+                            <Text style={styles.activityProject}>
+                              {activity.author || 'Someone'} commented on <Text style={styles.activityProjectName}>{project?.title || 'a project'}</Text>:
+                            </Text>
+                            <Text style={styles.activityComment}>
+                              "{activity.text}"
+                            </Text>
+                            <Text style={styles.activityDateRight}>{activity.date}{activity.time ? ` ${activity.time}` : ''}</Text>
+                          </>
+                        ) : activity.type === 'reply' ? (
+                          <>
+                            <Text style={styles.activityProject}>
+                              {activity.author || 'Someone'} replied to a comment on <Text style={styles.activityProjectName}>{project?.title || 'a project'}</Text>:
+                            </Text>
+                            <Text style={styles.activityComment}>
+                              "{activity.text}"
+                            </Text>
+                            <Text style={styles.activityDateRight}>{activity.date}{activity.time ? ` ${activity.time}` : ''}</Text>
+                          </>
+                        ) : (
+                          <Text style={styles.activityProject}>{activity.text}</Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  </Swipeable>
+                );
+              })}
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>You're all caught up</Text>
+              <Text style={styles.emptySubtitle}>Check back later for new updates.</Text>
+            </View>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
     paddingTop: StatusBar.currentHeight || 0,
   },
   header: {
@@ -130,7 +135,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#000',
+    color: '#fff',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   avatarButton: {
     padding: 0,
@@ -148,11 +156,15 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 16,
-    color: '#999',
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: '500',
   },
   activeTab: {
-    color: '#000',
+    color: '#fff',
     fontWeight: '600',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   unreadTab: {
     flexDirection: 'row',
@@ -164,26 +176,132 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#FF3B30',
     marginLeft: 6,
+    shadowColor: '#FF3B30',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   divider: {
     height: 1,
-    backgroundColor: '#eee',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     marginTop: 8,
+    marginHorizontal: 16,
+    borderRadius: 0.5,
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingBottom: 100,
+    paddingHorizontal: 32,
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '600',
-    color: '#000',
-    marginBottom: 4,
+    color: '#fff',
+    marginBottom: 8,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   emptySubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  gradient: {
+    flex: 1,
+  },
+  activityCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 16,
+    marginHorizontal: 4,
+    shadowColor: '#A07BB7',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(160, 123, 183, 0.1)',
+  },
+  activityIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#f6f2f7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    shadowColor: '#A07BB7',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#e9d7f7',
+  },
+  activityProject: {
+    fontSize: 15,
+    color: '#333',
+    marginBottom: 6,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+  activityProjectName: {
+    color: '#A07BB7',
+    fontWeight: '600',
+  },
+  activityComment: {
     fontSize: 14,
-    color: '#888',
+    color: '#666',
+    fontStyle: 'italic',
+    marginBottom: 8,
+    lineHeight: 18,
+    backgroundColor: '#f8f6f9',
+    padding: 8,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#A07BB7',
+  },
+  activityDateRight: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'right',
+    fontWeight: '500',
+  },
+  deleteButton: {
+    backgroundColor: '#e74c3c',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 60,
+    height: '90%',
+    borderRadius: 16,
+    marginVertical: 4,
+    marginRight: 8,
+    shadowColor: '#e74c3c',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  headerSection: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#FF3B30', // Changed to red
+    marginTop: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
 });

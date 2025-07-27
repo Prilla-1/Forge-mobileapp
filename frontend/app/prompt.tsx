@@ -12,6 +12,7 @@ import {
   Platform,
   ScrollView,
   Alert,
+  StatusBar,
 } from 'react-native';
 
 const PromptScreen = () => {
@@ -64,7 +65,7 @@ const PromptScreen = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.title}>AI Image Generator</Text>
+          <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">AI Image Generator</Text>
 
           <TextInput
             placeholder="Describe your image..."
@@ -109,13 +110,24 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+    paddingTop: 20 + (StatusBar.currentHeight || 0),
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#333',
+    marginBottom: 24,
+    color: '#7e22ce',
+    textAlign: 'center',
+    letterSpacing: 1.2,
+    textShadowColor: 'rgba(126,34,206,0.12)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    borderBottomWidth: 3,
+    borderBottomColor: '#a78bfa',
+    alignSelf: 'center',
+    paddingBottom: 6,
+    width: '80%',
   },
   input: {
     width: '100%',

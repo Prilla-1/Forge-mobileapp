@@ -86,9 +86,6 @@ export default function LayerScreen() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   return (
     <View style={styles.container}>
-      <View style={styles.headerBar}>
-        <Text style={styles.headerTitle}>Layers</Text>
-      </View>
       {grouped.length === 0 ? (
         <Text style={styles.empty}>No shapes on canvas yet.</Text>
       ) : (
@@ -137,9 +134,12 @@ export default function LayerScreen() {
 LayerScreen.title = 'Layers';
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
-  headerBar: { paddingBottom: 10, borderBottomWidth: 1, borderColor: '#eee', marginBottom: 10 },
-  headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#6C47A6', textAlign: 'left', letterSpacing: 1 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
   title: { fontSize: 22, fontWeight: '600', marginBottom: 20, textAlign: 'center' },
   groupRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderColor: '#eee' },
   groupLabel: { fontSize: 16, color: '#333', marginLeft: 10, fontWeight: 'bold' },

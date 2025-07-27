@@ -6,7 +6,7 @@ function ShareButton() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: 'Check out this team project in Figma Clone!',
+        message: 'Check out this team project in Forge!',
       });
     } catch (error) {
       // Optionally handle error

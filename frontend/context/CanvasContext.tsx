@@ -22,6 +22,7 @@ export interface CanvasContextType {
   trash: ShapeType[];
   deleteToTrash: (id: string) => void;
   restoreFromTrash: (id: string) => void;
+  clearTrash: () => void;
   selectedShapeId: string | null;
   setSelectedShapeId: Dispatch<SetStateAction<string | null>>;
   undo: () => void;
@@ -213,7 +214,11 @@ const initialTemplates: Template[] = [
       uri: 'https://via.placeholder.com/100x80.png?text=Preview', // 🖼️ preview image
     },
   ],
-  lines: [],
+  lines: [
+    { id: 'l1', startShapeId: 'hero', endShapeId: 'features', label: '' },
+    { id: 'l2', startShapeId: 'features', endShapeId: 'cta', label: '' },
+    { id: 'l3', startShapeId: 'cta', endShapeId: 'footer', label: '' },
+  ],
 },
 {
   id: 'template_login_ui',
@@ -325,7 +330,11 @@ const initialTemplates: Template[] = [
       text: "Don't have an account? Sign up",
     },
   ],
-  lines: [],
+  lines: [
+    { id: 'l1', startShapeId: 'title', endShapeId: 'emailField', label: '' },
+    { id: 'l2', startShapeId: 'emailField', endShapeId: 'passwordField', label: '' },
+    { id: 'l3', startShapeId: 'passwordField', endShapeId: 'loginBtn', label: '' },
+  ],
 },
 {
   id: 'loginPageTemplate',
@@ -399,7 +408,12 @@ const initialTemplates: Template[] = [
       uri: 'https://via.placeholder.com/60x100.png?text=User', // example image preview
     },
   ],
-  lines: [],
+  lines: [
+    { id: 'l1', startShapeId: 'logo', endShapeId: 'title', label: '' },
+    { id: 'l2', startShapeId: 'title', endShapeId: 'emailInput', label: '' },
+    { id: 'l3', startShapeId: 'emailInput', endShapeId: 'passwordInput', label: '' },
+    { id: 'l4', startShapeId: 'passwordInput', endShapeId: 'loginBtn', label: '' },
+  ],
 },
 
 
@@ -526,6 +540,10 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }
       return prev.filter(s => s.id !== id);
     });
+  };
+
+  const clearTrash = () => {
+    setTrash([]);
   };
 
   const addImageFromGallery = async () => {
@@ -674,6 +692,7 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         trash,
         deleteToTrash,
         restoreFromTrash,
+        clearTrash,
         selectedShapeId,
         setSelectedShapeId,
         undo,

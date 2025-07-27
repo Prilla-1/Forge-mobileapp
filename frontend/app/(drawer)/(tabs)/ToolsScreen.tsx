@@ -4,16 +4,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCanvas } from '../../../context/CanvasContext';
 import { generateUUID } from '@/utils/generateUUID';
 import { ShapeType } from '../../../constants/type';
+import Svg, { Polygon } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ToolsScreen() {
   const { addShape: addShapeToCanvas, undo, redo, saveToHistory, addImageFromGallery } = useCanvas();
 
   const createShapeStyle = (type: string) => {
     const base = {
-      width: 140,
-      height: type === 'oval' ? 70 : 120,
+      width: type === 'rectangle' ? 140 : type === 'kite' ? 100 : 140,
+      height: type === 'oval' ? 70 : type === 'rectangle' ? 80 : type === 'kite' ? 100 : 120,
       backgroundColor: '#3498db',
-      borderRadius: type === 'circle' ? 60 : type === 'oval' ? 35 : 8,
+      borderRadius: type === 'circle' ? 60 : type === 'oval' ? 35 : type === 'kite' ? 0 : 8,
     };
 
     if (type === 'text') {
@@ -46,18 +48,27 @@ export default function ToolsScreen() {
   const deleteAll = () => saveToHistory([]);
 
   const tools = [
-    { name: 'Add Rectangle', icon: 'square-outline', action: () => addShape('rectangle') },
+    { 
+      name: 'Add Rectangle', 
+      customIcon: <View style={styles.rectIcon} />,
+      action: () => addShape('rectangle') 
+    },
     { name: 'Add Circle', icon: 'ellipse-outline', action: () => addShape('circle') },
     {
       name: 'Add Oval',
-      icon: null,
-      customIcon: <Text style={styles.emojiIcon}>◉</Text>,
+      customIcon: <View style={styles.ovalIcon} />,
       action: () => addShape('oval'),
     },
     {
       name: 'Add Kite',
-      icon: null,
-      customIcon: <Text style={styles.emojiIcon}>🪁</Text>,
+      customIcon: <Svg width="40" height="40" viewBox="0 0 100 100">
+        <Polygon
+          points="50,0 100,50 50,100 0,50"
+          fill="transparent"
+          stroke="#34495e"
+          strokeWidth="3"
+        />
+      </Svg>,
       action: () => addShape('kite'),
     },
     { name: 'Add Text', icon: 'text', action: () => addShape('text') },
@@ -67,49 +78,36 @@ export default function ToolsScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>TOOLS</Text>
-      </View>
+    <LinearGradient colors={["#E9D5FF", "#F6F2F7"]} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.grid}>
+            {tools.map((tool) => (
+              <TouchableOpacity key={tool.name} style={styles.button} onPress={tool.action}>
+                {tool.customIcon ? (
+                  tool.customIcon
+                ) : (
+                  <Ionicons name={tool.icon as any} size={40} color="#34495e" />
+                )}
+                <Text style={styles.buttonText}>{tool.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.grid}>
-          {tools.map((tool) => (
-            <TouchableOpacity key={tool.name} style={styles.button} onPress={tool.action}>
-              {tool.customIcon ? (
-                tool.customIcon
-              ) : (
-                <Ionicons name={tool.icon as any} size={40} color="#34495e" />
-              )}
-              <Text style={styles.buttonText}>{tool.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <TouchableOpacity style={[styles.button, styles.deleteAllButton]} onPress={deleteAll}>
-          <Ionicons name="trash-outline" size={40} color="#c0392b" />
-          <Text style={[styles.buttonText, { color: '#c0392b' }]}>Delete All</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+          <TouchableOpacity style={[styles.button, styles.deleteAllButton]} onPress={deleteAll}>
+            <Ionicons name="trash-outline" size={40} color="#c0392b" />
+            <Text style={[styles.buttonText, { color: '#c0392b' }]}>Delete All</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5f7fa',
-  },
-  header: {
-    padding: 16,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#2c3e50',
+    // backgroundColor: '#f5f7fa',
   },
   container: {
     padding: 16,
@@ -152,5 +150,23 @@ const styles = StyleSheet.create({
   emojiIcon: {
     fontSize: 36,
     lineHeight: 40,
+  },
+  rectIcon: {
+    width: 44,
+    height: 24,
+    borderWidth: 3,
+    borderColor: '#34495e',
+    backgroundColor: 'transparent',
+    borderRadius: 4,
+    marginBottom: 2,
+  },
+  ovalIcon: {
+    width: 40,
+    height: 20,
+    borderWidth: 3,
+    borderColor: '#34495e',
+    backgroundColor: 'transparent',
+    borderRadius: 20,
+    marginBottom: 2,
   },
 });
