@@ -114,21 +114,25 @@ const saveAsTemplate = async () => {
   const templateId = uuid.v4();
 
   try {
-    const response = await fetch('http://10.212.110.165:8081/api/templates/seed', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: templateId,
-        name: 'My First Template',
-        shapes:shapes,
-        lines:lines,
-      }),
-    });
+    // Mock save - no backend call
+    // const response = await fetch('http://10.212.110.165:8081/api/templates/seed', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({
+    //     id: templateId,
+    //     name: 'My First Template',
+    //     shapes:shapes,
+    //     lines:lines,
+    //   }),
+    // });
 
-    const text = await response.text();
-    alert('Template saved: ' + text);
+    // const text = await response.text();
+    // alert('Template saved: ' + text);
+
+    // Mock successful save
+    alert('Template saved locally!');
   } catch (err) {
-    alert('Failed to save template');
+    alert('Failed to save template locally');
     console.error(err);
   }
 };

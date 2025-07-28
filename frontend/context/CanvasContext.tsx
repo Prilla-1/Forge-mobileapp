@@ -643,6 +643,8 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           if (newProps.text !== undefined) updatedShape.text = newProps.text;
           if (newProps.uri !== undefined) updatedShape.uri = newProps.uri;
           if (newProps.isLocked !== undefined) updatedShape.isLocked = newProps.isLocked;
+          if (newProps.backgroundImage !== undefined) updatedShape.backgroundImage = newProps.backgroundImage;
+          if (newProps.backgroundImageMode !== undefined) updatedShape.backgroundImageMode = newProps.backgroundImageMode;
           
           return updatedShape;
         }

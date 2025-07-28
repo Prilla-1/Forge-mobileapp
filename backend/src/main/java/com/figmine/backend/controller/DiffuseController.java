@@ -21,7 +21,11 @@ public class DiffuseController {
             return ResponseEntity.badRequest().body("Prompt is required.");
         }
 
-        String imageUrl = imageGenerationService.generateImage(prompt);
-        return ResponseEntity.ok(Map.of("imageUrl", imageUrl));
+        try {
+            String base64Image = imageGenerationService.generateImage(prompt);
+            return ResponseEntity.ok(Map.of("image", base64Image));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
     }
 }

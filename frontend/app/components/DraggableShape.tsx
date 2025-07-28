@@ -1,5 +1,5 @@
 import React, { useState, useEffect,useRef } from 'react';
-import { Image, Text, StyleSheet, View, TextInput, TouchableOpacity, Modal, ViewStyle, TouchableWithoutFeedback } from 'react-native';
+import { Image, Text, StyleSheet, View, TextInput, TouchableOpacity, Modal, ViewStyle, Alert } from 'react-native';
 import type { TextInput as RNTextInput } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {useSharedValue,useAnimatedStyle,withSpring,runOnJS,} from 'react-native-reanimated';
@@ -8,6 +8,7 @@ import { ShapeType } from '../../constants/type';
 import { Ionicons } from '@expo/vector-icons';
 import { generateUUID } from '@/utils/generateUUID';
 import Svg, { Polygon } from 'react-native-svg';
+import * as ImagePicker from 'expo-image-picker';
 
 const HANDLE_SIZE = 8;
 const MIN_SIZE = 40;
@@ -210,8 +211,11 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
 
   // Early return after all hooks
   if (shape.isVisible === false) return null;
+  
+
+  
   const baseStyle: ViewStyle = {
-    backgroundColor: shape.style?.backgroundColor || '#ccc',
+    backgroundColor: shape.backgroundImage ? 'transparent' : (shape.style?.backgroundColor || '#ccc'),
     borderRadius: shape.type === 'circle' || shape.type === 'oval' ? 999 : (shape.style?.borderRadius || 0),
   };
 
@@ -347,6 +351,34 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
     }
     setIsEditingText(false);
   };
+
+  const handleAddImage = async () => {
+    try {
+      const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!granted) {
+        Alert.alert('Permission Denied', 'Please grant permission to access your photo library.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+        allowsEditing: true,
+        aspect: [1, 1], // Force square aspect ratio to fit shape better
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        const selectedImage = result.assets[0];
+        updateShape(shape.id, { 
+          backgroundImage: selectedImage.uri,
+          backgroundImageMode: 'cover' // This will make the image fill the entire shape area
+        });
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
   
   return (
     <>
@@ -406,16 +438,28 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
             disabled={isEditingText}
           >
             {/* Render kite as SVG with overlayed text or text input */}
-            {shape.type === 'kite' ? (
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <Svg width="100%" height="100%" viewBox="0 0 100 100" style={StyleSheet.absoluteFill}>
-                  <Polygon
-                    points="50,0 100,50 50,100 0,50"
-                    fill={shape.style?.backgroundColor || '#3498db'}
-                    stroke="#34495e"
-                    strokeWidth="2"
-                  />
-                </Svg>
+                         {shape.type === 'kite' ? (
+               <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                 {/* Background Image for kite */}
+                 {shape.backgroundImage && (
+                   <Image
+                     source={{ uri: shape.backgroundImage }}
+                     style={{
+                       position: 'absolute',
+                       width: '100%',
+                       height: '100%',
+                       resizeMode: shape.backgroundImageMode || 'cover',
+                     }}
+                   />
+                 )}
+                 <Svg width="100%" height="100%" viewBox="0 0 100 100" style={StyleSheet.absoluteFill}>
+                   <Polygon
+                     points="50,0 100,50 50,100 0,50"
+                     fill={shape.backgroundImage ? 'transparent' : (shape.style?.backgroundColor || '#3498db')}
+                     stroke="#34495e"
+                     strokeWidth="2"
+                   />
+                 </Svg>
                 {isEditingText ? (
                   <View style={{ 
                     width: '80%', 
@@ -481,8 +525,40 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                   )
                 )}
               </View>
+            ) : shape.type === 'image' && shape.uri ? (
+              // Special handling for images - no background container
+              <Image 
+                source={{ uri: shape.uri }} 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  borderRadius: 8 
+                }} 
+                resizeMode="cover" 
+              />
             ) : (
               <Animated.View style={[styles.shape, baseStyle, diamondOuterStyle, isSelected && !shape.isLocked && styles.selectedBorder]}>
+                {/* Background Image */}
+                {shape.backgroundImage && (
+                  <View style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: shape.style?.backgroundColor || '#ccc',
+                    borderRadius: shape.type === 'circle' || shape.type === 'oval' ? 999 : (shape.style?.borderRadius || 0),
+                    zIndex: 1,
+                  }}>
+                                         <Image
+                       source={{ uri: shape.backgroundImage }}
+                       style={{
+                         width: '100%',
+                         height: '100%',
+                         resizeMode: shape.backgroundImageMode || 'cover',
+                         borderRadius: shape.type === 'circle' || shape.type === 'oval' ? 999 : (shape.style?.borderRadius || 0),
+                       }}
+                     />
+                  </View>
+                )}
                 <View style={[styles.contentContainer, diamondInnerStyle]}>
                   {/* Text editing for ALL shape types */}
                   {isEditingText ? (
@@ -589,6 +665,9 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                   <TouchableOpacity style={styles.toolbarBtn} onPress={() => setColorModal(true)}>
                     <Ionicons name="color-palette" size={20} color="#333" />
                   </TouchableOpacity>
+                  <TouchableOpacity style={styles.toolbarBtn} onPress={handleAddImage}>
+                    <Ionicons name="image" size={20} color="#333" />
+                  </TouchableOpacity>
                 </>
               )}
             </Animated.View>
@@ -597,41 +676,6 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                 <Ionicons name="lock-closed" size={24} color="white" />
               </View>
             )}
- {shape.type === 'image' && shape.uri && (
- <View
-  style={{
-    position: 'absolute',
-    left: shape.position.x,
-    top: shape.position.y,
-    width: shape.style.width,
-    height: shape.style.height,
-    borderColor: isSelected ? 'dodgerblue' : 'transparent', // ✅ show only on select
-    borderWidth: isSelected ? 1 : 0,
-    backgroundColor: 'transparent', // ✅ important
-    justifyContent: 'center',
-    alignItems: 'center',
-  }}
->
-  <Image
-    source={{ uri: shape.uri }}
-    style={{
-      width: '100%',
-      height: '100%',
-      resizeMode: 'contain',
-      borderRadius: shape.style.borderRadius || 0,
-    }}
-  />
-
-  {/* Resize handles — show only if selected */}
-  {isSelected && (
-    <>
-      {/* top-left, top-right, etc. resize handles */}
-    </>
-  )}
-</View>
-
-)}
-
             {isSelected && !shape.isLocked && (
               <>
                 <GestureDetector gesture={createConnectionGesture({ x: shape.position.x + (shape.style.width || 0) / 2, y: shape.position.y })}>
