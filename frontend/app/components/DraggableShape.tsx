@@ -1,5 +1,5 @@
 import React, { useState, useEffect,useRef } from 'react';
-import { Image, Text, StyleSheet, View, TextInput, TouchableOpacity, Modal, ViewStyle } from 'react-native';
+import { Image, Text, StyleSheet, View, TextInput, TouchableOpacity, Modal, ViewStyle, TouchableWithoutFeedback } from 'react-native';
 import type { TextInput as RNTextInput } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {useSharedValue,useAnimatedStyle,withSpring,runOnJS,} from 'react-native-reanimated';
@@ -597,9 +597,41 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                 <Ionicons name="lock-closed" size={24} color="white" />
               </View>
             )}
-          {shape.type === 'image' && shape.uri && (
-            <Image source={{ uri: shape.uri }} style={{ width: '100%', height: '100%', borderRadius: 8 }} resizeMode="cover" />
-          )}
+ {shape.type === 'image' && shape.uri && (
+ <View
+  style={{
+    position: 'absolute',
+    left: shape.position.x,
+    top: shape.position.y,
+    width: shape.style.width,
+    height: shape.style.height,
+    borderColor: isSelected ? 'dodgerblue' : 'transparent', // ✅ show only on select
+    borderWidth: isSelected ? 1 : 0,
+    backgroundColor: 'transparent', // ✅ important
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+>
+  <Image
+    source={{ uri: shape.uri }}
+    style={{
+      width: '100%',
+      height: '100%',
+      resizeMode: 'contain',
+      borderRadius: shape.style.borderRadius || 0,
+    }}
+  />
+
+  {/* Resize handles — show only if selected */}
+  {isSelected && (
+    <>
+      {/* top-left, top-right, etc. resize handles */}
+    </>
+  )}
+</View>
+
+)}
+
             {isSelected && !shape.isLocked && (
               <>
                 <GestureDetector gesture={createConnectionGesture({ x: shape.position.x + (shape.style.width || 0) / 2, y: shape.position.y })}>
@@ -668,6 +700,10 @@ const styles = StyleSheet.create({
   borderColor: '#888',
   borderStyle: 'dashed',
 },
+image: {
+  resizeMode: 'contain',
+},
+
   lockOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#fff',
