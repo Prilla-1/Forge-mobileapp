@@ -1,13 +1,23 @@
 package com.figmine.backend.dto;
 
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 
 public class TemplateDto {
 
     private String id;
     private String name;
-    private List<ShapeDto> shapes;
-    private List<LineDto> lines;
+    private List<ShapeDto> shapes; 
+    private List<LineDto> lines;   
+    private String imageUrl;
 
     // Getters and Setters
     public String getId() {
@@ -40,5 +50,13 @@ public class TemplateDto {
 
     public void setLines(List<LineDto> lines) {
         this.lines = lines;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

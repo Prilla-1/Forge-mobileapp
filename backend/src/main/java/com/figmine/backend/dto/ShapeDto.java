@@ -1,5 +1,12 @@
 package com.figmine.backend.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ShapeDto {
     private String id;
     private String type;
@@ -14,20 +21,21 @@ public class ShapeDto {
     private String uri;
     private String text;
 
-    // Getters and setters...
-     public static class Position {
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Position {
         private int x;
         private int y;
-        // getters and setters
     }
 
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class Style {
         private int width;
         private int height;
         private String backgroundColor;
         private int borderRadius;
-        // more styling props if needed
-        // getters and setters
     }
 }
-

@@ -5,12 +5,20 @@ import React, { useState, useRef, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { useFonts } from 'expo-font';
+import { useUser } from '../context/UserContext';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../context/ThemeContext';
+import { getStyles } from '../constants/theme';
 
-const DEFAULT_AVATAR = require('../assets/images/icon.png');
+
+const DEFAULT_AVATAR = require('../assets/images/profile-icon-png-898.png');
 const APP_VERSION = 'v1.0.0';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { user ,setUser} = useUser();
   const [fontsLoaded] = useFonts({
     'JetBrainsMono-Medium': require('../assets/fonts/fonts/ttf/JetBrainsMono-Medium.ttf'),
   });
@@ -29,13 +37,43 @@ export default function SettingsScreen() {
     );
   };
   // Profile state
-  const [name, setName] = useState('Your Name');
-  const [avatar, setAvatar] = useState(null); // uri or null
+ const [name, setName] = useState(user?.username || 'Your Name');
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
   const [dirty, setDirty] = useState(false);
   const nameInputRef = useRef(null);
   const [email] = useState('user@email.com');
-  const [theme, setTheme] = useState('light');
+  const { theme, toggleTheme } = useTheme();
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  //Choosing profile picture
+ const pickImage = async () => {
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (status !== 'granted') {
+    Alert.alert('Permission Denied', 'We need permission to access your photos.');
+    return;
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.7,
+  });
+
+  if (!result.canceled) {
+    const uri = result.assets[0].uri;
+    setAvatar(uri);
+    await AsyncStorage.setItem('avatar', uri); // optional local persistence
+  }
+};
+useEffect(() => {
+  const loadAvatar = async () => {
+    const saved = await AsyncStorage.getItem('avatar');
+    if (saved) setAvatar(saved);
+  };
+  loadAvatar();
+}, []);
 
   // Animations
   const cardScale = useSharedValue(0.9);
@@ -49,16 +87,15 @@ export default function SettingsScreen() {
     opacity: cardOpacity.value,
   }));
 
-  // Mock image picker
-  const pickImage = async () => {
-    Alert.alert('Change Avatar', 'Image picker not implemented in this mock.');
-  };
+  
 
-  const handleSave = () => {
-    setEditingName(false);
-    setDirty(false);
-    Alert.alert('Profile updated', 'Your changes have been saved.');
-  };
+ const handleSave = () => {
+  setEditingName(false);
+  setDirty(false);
+  setUser(prev => prev ? { ...prev, username: name } : null);
+  Alert.alert('Profile updated', 'Your changes have been saved.');
+};
+
 
   return (
     <LinearGradient colors={["#A07BB7", "#F6F2F7"]} style={{ flex: 1 }}>
@@ -117,7 +154,7 @@ export default function SettingsScreen() {
             <View style={styles.sectionRow}>
               <Ionicons name="color-palette-outline" size={22} color="#A07BB7" style={{ marginRight: 12 }} />
               <Text style={styles.sectionLabel}>Theme</Text>
-              <TouchableOpacity style={styles.themeToggle} onPress={() => setTheme(t => t === 'light' ? 'dark' : 'light')}>
+              <TouchableOpacity style={styles.themeToggle} onPress={toggleTheme}>
                 <Ionicons name={theme === 'light' ? 'sunny' : 'moon'} size={20} color={theme === 'light' ? '#FFD600' : '#6C47A6'} />
                 <Text style={{ marginLeft: 6, color: '#6C47A6', fontWeight: 'bold' }}>{theme === 'light' ? 'Light' : 'Dark'}</Text>
               </TouchableOpacity>
@@ -199,27 +236,26 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   avatarWrapper: {
-    position: 'relative',
-    marginBottom: 12,
-  },
-  avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: '#eee',
-    borderWidth: 2,
-    borderColor: '#A07BB7',
-  },
-  editAvatarIcon: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#a07bb7',
-    borderRadius: 14,
-    padding: 5,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
+  alignSelf: 'center',
+  position: 'relative',
+  marginBottom: 12,
+},
+avatar: {
+  width: 100,
+  height: 100,
+  borderRadius: 50,
+  backgroundColor: '#ccc',
+},
+editAvatarIcon: {
+  position: 'absolute',
+  bottom: 0,
+  right: 0,
+  backgroundColor: '#333',
+  padding: 6,
+  borderRadius: 20,
+  borderWidth: 2,
+  borderColor: '#fff',
+},
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -253,6 +289,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 15,
   },
+  imageHint: {
+  fontSize: 12,
+  color: '#888',
+  textAlign: 'center',
+  marginTop: 4,
+},
   sectionCard: {
     backgroundColor: '#fff',
     borderRadius: 18,

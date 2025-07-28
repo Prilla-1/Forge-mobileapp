@@ -38,7 +38,7 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
         return authService.login(request)
                 .<ResponseEntity<?>>map(user -> {
-                    String token = jwtService.generateToken(user.getEmail());
+                    String token = jwtService.generateToken(user.getEmail(), user.getName());
                     Map<String, Object> resp = new HashMap<>();
                     resp.put("token", token);
                     resp.put("name", user.getName());

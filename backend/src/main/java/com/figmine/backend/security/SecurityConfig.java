@@ -20,7 +20,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -63,17 +62,17 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public routes
+                // Public endpoints
                 .requestMatchers(
                     "/api/auth/**",
-                    "/api/diffuse/**",        // Allow AI/image endpoints
+                    "/api/templates/**",
+                    "/api/diffuse/**",
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
-                    "/error"                  // Avoid Whitelabel 403 on errors
+                    "/error"
                 ).permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                
-                // Protected routes
+                // Protected endpoints
                 .requestMatchers("/api/users/me", "/api/users/me/**").authenticated()
                 .anyRequest().authenticated()
             )
@@ -87,16 +86,14 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(Arrays.asList(
-            "http://localhost:8082",
-            "http://192.168.1.10:8082",
-            "http://10.21.192.165:8082",
-            "exp://192.168.1.10:8082",
-            "exp://10.21.192.165:8082",
-            "http://localhost:19006",
-            "http://192.168.1.10:19006"
+        config.setAllowedOriginPatterns(List.of(
+            "http://localhost:[*]",
+            "http://192.168.[*]",
+            "http://10.[*]",
+            "exp://[*]"
         ));
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 

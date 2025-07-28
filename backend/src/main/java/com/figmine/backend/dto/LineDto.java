@@ -1,10 +1,15 @@
 package com.figmine.backend.dto;
 
-public class LineDto{
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class LineDto {
     private String id;
     private String startShapeId;
     private String endShapeId;
     private String label;
-
-    // Getters and setters...
 }
