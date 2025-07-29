@@ -37,23 +37,16 @@ const PromptScreen = () => {
     setStatus('Checking Stable Diffusion...');
 
     try {
-      // First check if Stable Diffusion is running
-      const healthResponse = await fetch('http://10.222.231.165:8081/api/health/stable-diffusion');
-      const healthData = await healthResponse.json();
-      
-      if (healthData.status !== 'running') {
-        Alert.alert(
-          'Stable Diffusion Not Running', 
-          'Please start Stable Diffusion WebUI with API enabled before generating images.'
-        );
-        setLoading(false);
-        setStatus('');
+      // Check if Stable Diffusion is running
+      const healthResponse = await fetch('http://10.212.110.165:8081/api/health/stable-diffusion');
+      if (!healthResponse.ok) {
+        setStatus('Stable Diffusion is not running. Please start it first.');
         return;
       }
 
       setStatus('Generating image...');
       // Generate the image
-      const response = await fetch('http://10.222.231.165:8081/api/ai/generate', {
+      const response = await fetch('http://10.212.110.165:8081/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),

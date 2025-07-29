@@ -25,6 +25,24 @@ export default function MirrorScreen() {
   const [canvasWidth, setCanvasWidth] = useState(0);
   const [canvasHeight, setCanvasHeight] = useState(0);
 
+  // Debug: Log all shapes to see what we have
+  useEffect(() => {
+    console.log('=== MIRROR SCREEN SHAPES DEBUG ===');
+    console.log('Total shapes:', shapes.length);
+    shapes.forEach((shape, index) => {
+      console.log(`Shape ${index}:`, {
+        id: shape.id,
+        type: shape.type,
+        hasBackgroundImage: !!shape.backgroundImage,
+        backgroundImage: shape.backgroundImage,
+        backgroundImageMode: shape.backgroundImageMode,
+        style: shape.style,
+        position: shape.position
+      });
+    });
+    console.log('=== END DEBUG ===');
+  }, [shapes]);
+
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
 
@@ -140,6 +158,15 @@ export default function MirrorScreen() {
     const { id, type, style, position, uri, text } = shape;
     const { x, y } = position;
 
+    // Debug: Log shape data to see what we're working with
+    console.log('Rendering shape:', { 
+      id, 
+      type, 
+      hasBackgroundImage: !!shape.backgroundImage,
+      backgroundImage: shape.backgroundImage ? shape.backgroundImage.substring(0, 50) + '...' : 'none',
+      backgroundImageMode: shape.backgroundImageMode
+    });
+
     const basePosition = {
       position: 'absolute' as const,
       left: x * scale + offset.x,
@@ -148,26 +175,81 @@ export default function MirrorScreen() {
 
     switch (type) {
       case 'rectangle':
-      case 'oval': {
+      case 'oval':
+      case 'circle':
+      case 'diamond': {
         const viewStyle: ViewStyle = {
           ...basePosition,
           width: style?.width ? style.width * scale : undefined,
           height: style?.height ? style.height * scale : undefined,
-          backgroundColor: style?.backgroundColor,
-          borderRadius: style?.borderRadius ?? 0,
+          backgroundColor: shape.backgroundImage ? 'transparent' : style?.backgroundColor, // Transparent when image is present
+          borderRadius: type === 'circle' || type === 'oval' ? 999 : (style?.borderRadius ?? 0),
           justifyContent: 'center',
           alignItems: 'center',
+          transform: type === 'diamond' ? [{ rotate: '45deg' }] : [],
         };
 
         const textStyle: TextStyle = {
           fontSize: (style?.fontSize || 16) * scale,
           color: style?.color || '#000',
           textAlign: 'center',
+          transform: type === 'diamond' ? [{ rotate: '-45deg' }] : [],
         };
 
         return (
           <View key={id} style={viewStyle}>
-            {text && <Text style={textStyle}>{text}</Text>}
+            {/* Background Image */}
+            {shape.backgroundImage && (
+              (() => {
+                console.log('Rendering background image with URI:', shape.backgroundImage.substring(0, 50) + '...');
+                
+                // Handle different URI formats
+                let imageUri = shape.backgroundImage;
+                
+                // Convert file:// URIs to proper format for React Native
+                if (imageUri.startsWith('file://')) {
+                  // Keep as is - React Native should handle file:// URIs
+                  console.log('Using file:// URI format');
+                } else if (imageUri.startsWith('content://')) {
+                  // Android content URI - should work as is
+                  console.log('Using content:// URI format');
+                } else if (imageUri.startsWith('data:')) {
+                  // Base64 data URI - should work as is
+                  console.log('Using data: URI format');
+                } else {
+                  // Try to convert to file:// format if it's a local path
+                  if (!imageUri.startsWith('http')) {
+                    imageUri = `file://${imageUri}`;
+                    console.log('Converted to file:// URI format:', imageUri);
+                  }
+                }
+                
+                return (
+                  <View style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'transparent', // Make background transparent
+                    borderRadius: type === 'circle' || type === 'oval' ? 999 : (style?.borderRadius || 0),
+                    zIndex: 2, // Higher z-index to ensure it's on top
+                    overflow: 'hidden', // Ensure image respects border radius
+                  }}>
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        resizeMode: shape.backgroundImageMode || 'cover',
+                        borderRadius: type === 'circle' || type === 'oval' ? 999 : (style?.borderRadius || 0),
+                      }}
+                      onError={(error) => console.error('Background image loading error:', error)}
+                      onLoad={() => console.log('Background image loaded successfully')}
+                    />
+                  </View>
+                );
+              })()
+            )}
+            {text && <Text style={[textStyle, { zIndex: 3 }]}>{text}</Text>}
           </View>
         );
       }
@@ -175,10 +257,48 @@ export default function MirrorScreen() {
         // Render kite as SVG Polygon with centered text
         return (
           <View key={id} style={[basePosition, { width: style?.width ? style.width * scale : 100 * scale, height: style?.height ? style.height * scale : 100 * scale, justifyContent: 'center', alignItems: 'center' }]}> 
+            {/* Background Image for kite */}
+            {shape.backgroundImage && (
+              (() => {
+                console.log('Rendering kite background image with URI:', shape.backgroundImage.substring(0, 50) + '...');
+                
+                // Handle different URI formats
+                let imageUri = shape.backgroundImage;
+                
+                // Convert file:// URIs to proper format for React Native
+                if (imageUri.startsWith('file://')) {
+                  console.log('Using file:// URI format for kite');
+                } else if (imageUri.startsWith('content://')) {
+                  console.log('Using content:// URI format for kite');
+                } else if (imageUri.startsWith('data:')) {
+                  console.log('Using data: URI format for kite');
+                } else {
+                  if (!imageUri.startsWith('http')) {
+                    imageUri = `file://${imageUri}`;
+                    console.log('Converted kite to file:// URI format:', imageUri);
+                  }
+                }
+                
+                return (
+                  <Image
+                    source={{ uri: imageUri }}
+                    style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      resizeMode: shape.backgroundImageMode || 'cover',
+                      zIndex: 2, // Higher z-index
+                    }}
+                    onError={(error) => console.error('Kite background image loading error:', error)}
+                    onLoad={() => console.log('Kite background image loaded successfully')}
+                  />
+                );
+              })()
+            )}
             <Svg width="100%" height="100%" viewBox="0 0 100 100" style={StyleSheet.absoluteFill}>
               <Polygon
                 points="50,0 100,50 50,100 0,50"
-                fill={style?.backgroundColor || '#3498db'}
+                fill={shape.backgroundImage ? 'transparent' : (style?.backgroundColor || '#3498db')}
                 stroke="#34495e"
                 strokeWidth="2"
               />
@@ -215,19 +335,176 @@ export default function MirrorScreen() {
         );
       }
 
-      case 'image': {
-        const imageStyle: ImageStyle = {
+      case 'arrow': {
+        const viewStyle: ViewStyle = {
           ...basePosition,
           width: style?.width ? style.width * scale : undefined,
           height: style?.height ? style.height * scale : undefined,
+          backgroundColor: shape.backgroundImage ? 'transparent' : style?.backgroundColor, // Transparent when image is present
+          borderRadius: style?.borderRadius ?? 0,
+          justifyContent: 'center',
+          alignItems: 'center',
         };
+
+        const textStyle: TextStyle = {
+          fontSize: (style?.fontSize || 16) * scale,
+          color: style?.color || '#000',
+          textAlign: 'center',
+        };
+
+        return (
+          <View key={id} style={viewStyle}>
+            {/* Background Image */}
+            {shape.backgroundImage && (
+              (() => {
+                console.log('Rendering arrow background image with URI:', shape.backgroundImage.substring(0, 50) + '...');
+                
+                // Handle different URI formats
+                let imageUri = shape.backgroundImage;
+                
+                if (imageUri.startsWith('file://')) {
+                  console.log('Using file:// URI format for arrow');
+                } else if (imageUri.startsWith('content://')) {
+                  console.log('Using content:// URI format for arrow');
+                } else if (imageUri.startsWith('data:')) {
+                  console.log('Using data: URI format for arrow');
+                } else {
+                  if (!imageUri.startsWith('http')) {
+                    imageUri = `file://${imageUri}`;
+                    console.log('Converted arrow to file:// URI format:', imageUri);
+                  }
+                }
+                
+                return (
+                  <View style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'transparent', // Make background transparent
+                    borderRadius: style?.borderRadius || 0,
+                    zIndex: 2, // Higher z-index
+                    overflow: 'hidden', // Ensure image respects border radius
+                  }}>
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        resizeMode: shape.backgroundImageMode || 'cover',
+                        borderRadius: style?.borderRadius || 0,
+                      }}
+                      onError={(error) => console.error('Arrow background image loading error:', error)}
+                      onLoad={() => console.log('Arrow background image loaded successfully')}
+                    />
+                  </View>
+                );
+              })()
+            )}
+            {/* Arrow symbol */}
+            <Text style={[textStyle, { fontSize: (style?.fontSize || 24) * scale, zIndex: 3 }]}>➔</Text>
+            {text && <Text style={[textStyle, { position: 'absolute', bottom: -20, zIndex: 3 }]}>{text}</Text>}
+          </View>
+        );
+      }
+
+      case 'button': {
+        const viewStyle: ViewStyle = {
+          ...basePosition,
+          width: style?.width ? style.width * scale : undefined,
+          height: style?.height ? style.height * scale : undefined,
+          backgroundColor: shape.backgroundImage ? 'transparent' : style?.backgroundColor, // Transparent when image is present
+          borderRadius: style?.borderRadius ?? 8,
+          justifyContent: 'center',
+          alignItems: 'center',
+          borderWidth: 1,
+          borderColor: style?.borderColor || '#ccc',
+        };
+
+        const textStyle: TextStyle = {
+          fontSize: (style?.fontSize || 16) * scale,
+          color: style?.color || '#000',
+          textAlign: 'center',
+        };
+
+        return (
+          <View key={id} style={viewStyle}>
+            {/* Background Image */}
+            {shape.backgroundImage && (
+              (() => {
+                console.log('Rendering button background image with URI:', shape.backgroundImage.substring(0, 50) + '...');
+                
+                // Handle different URI formats
+                let imageUri = shape.backgroundImage;
+                
+                if (imageUri.startsWith('file://')) {
+                  console.log('Using file:// URI format for button');
+                } else if (imageUri.startsWith('content://')) {
+                  console.log('Using content:// URI format for button');
+                } else if (imageUri.startsWith('data:')) {
+                  console.log('Using data: URI format for button');
+                } else {
+                  if (!imageUri.startsWith('http')) {
+                    imageUri = `file://${imageUri}`;
+                    console.log('Converted button to file:// URI format:', imageUri);
+                  }
+                }
+                
+                return (
+                  <View style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'transparent', // Make background transparent
+                    borderRadius: style?.borderRadius || 8,
+                    zIndex: 2, // Higher z-index
+                    overflow: 'hidden', // Ensure image respects border radius
+                  }}>
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        resizeMode: shape.backgroundImageMode || 'cover',
+                        borderRadius: style?.borderRadius || 8,
+                      }}
+                      onError={(error) => console.error('Button background image loading error:', error)}
+                      onLoad={() => console.log('Button background image loaded successfully')}
+                    />
+                  </View>
+                );
+              })()
+            )}
+            {text && <Text style={[textStyle, { zIndex: 3 }]}>{text}</Text>}
+          </View>
+        );
+      }
+
+      case 'image': {
+        // Ensure we have valid dimensions
+        const imageWidth = style?.width ? style.width * scale : 200 * scale;
+        const imageHeight = style?.height ? style.height * scale : 200 * scale;
+        
+        const imageStyle: ImageStyle = {
+          ...basePosition,
+          width: imageWidth,
+          height: imageHeight,
+          borderRadius: 8,
+        };
+
+        // Ensure the URI is properly formatted for React Native
+        const imageUri = uri && uri.startsWith('data:image/') ? uri : `data:image/png;base64,${uri}`;
+
+        // Don't render if no URI
+        if (!uri) {
+          return null;
+        }
 
         return (
           <Image
             key={id}
-            source={{ uri }}
+            source={{ uri: imageUri }}
             style={imageStyle}
-            resizeMode="contain"
+            resizeMode="cover"
           />
         );
       }

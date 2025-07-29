@@ -1,5 +1,5 @@
 import React, { useState, useEffect,useRef } from 'react';
-import { Image, Text, StyleSheet, View, TextInput, TouchableOpacity, Modal, ViewStyle, Alert } from 'react-native';
+import { Image, Text, StyleSheet, View, TextInput, TouchableOpacity, ViewStyle, Alert } from 'react-native';
 import type { TextInput as RNTextInput } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {useSharedValue,useAnimatedStyle,withSpring,runOnJS,} from 'react-native-reanimated';
@@ -32,6 +32,14 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
   const { updateShape, selectedShapeId, setSelectedShapeId, addLine, shapes } = useCanvas();
   const textInputRef = useRef<RNTextInput>(null);
   const isSelected = selectedShapeId === shape.id;
+
+  // Debug color modal state
+  useEffect(() => {
+    if (colorModal) {
+      console.log('Color modal is now true for shape:', shape.id);
+      console.log('Shape position:', shape.position);
+    }
+  }, [colorModal, shape.id, shape.position]);
 
   // All React hooks must be called before any conditional returns
   const translateX = useSharedValue(shape.position.x);
@@ -369,10 +377,17 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
 
       if (!result.canceled && result.assets.length > 0) {
         const selectedImage = result.assets[0];
+        console.log('Selected image URI:', selectedImage.uri);
+        console.log('Selected image type:', selectedImage.type);
+        console.log('Selected image width:', selectedImage.width);
+        console.log('Selected image height:', selectedImage.height);
+        
         updateShape(shape.id, { 
           backgroundImage: selectedImage.uri,
           backgroundImageMode: 'cover' // This will make the image fill the entire shape area
         });
+        
+        console.log('Updated shape with background image:', shape.id);
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -384,49 +399,94 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
     <>
       {isSelected && (
         <>
-          {/* Color Picker Modal */}
-          <Modal
-            visible={colorModal}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setColorModal(false)}
-          >
-            <View style={[styles.modalOverlay, { flex: 1, justifyContent: 'center', alignItems: 'center', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }]}>
-              <View style={styles.modalContent}>
-                <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Pick a Color</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  {COLORS.map((color) => (
-                    <TouchableOpacity
-                      key={color}
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 16,
+          {/* Test background when color modal is true */}
+          {colorModal && (
+            <View style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(255, 0, 0, 0.1)', // Red tint
+              zIndex: 9998,
+            }} />
+          )}
+          {/* Simple Color Picker Bar */}
+          {colorModal && (
+            <View style={{
+              position: 'absolute',
+              top: shape.position.y - 120, // Position relative to shape's Y position
+              left: shape.position.x - 50, // Position relative to shape's X position
+              width: 300, // Fixed width
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'white',
+              borderRadius: 20,
+              padding: 15,
+              zIndex: 9999, // Very high z-index to ensure it's on top
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 10,
+              borderWidth: 2,
+              borderColor: '#007AFF',
+              minHeight: 60, // Ensure minimum height
+            }}>
+              <Text style={{ 
+                position: 'absolute', 
+                top: -25, 
+                left: 0, 
+                right: 0, 
+                textAlign: 'center', 
+                fontSize: 12, 
+                color: '#007AFF',
+                fontWeight: 'bold'
+              }}>
+                COLOR PICKER
+              </Text>
+              {COLORS.slice(0, 5).map((color) => (
+                <TouchableOpacity
+                  key={color}
+                  style={{
+                    width: 35,
+                    height: 35,
+                    borderRadius: 17,
+                    backgroundColor: color,
+                    marginHorizontal: 6,
+                    borderWidth: 3,
+                    borderColor: color === shape.style?.backgroundColor ? '#007AFF' : '#ddd',
+                  }}
+                  onPress={() => {
+                    console.log('Color selected:', color);
+                    updateShape(shape.id, {
+                      style: {
+                        ...shape.style,
                         backgroundColor: color,
-                        margin: 6,
-                        borderWidth: 2,
-                        borderColor: '#ccc',
-                      }}
-                      onPress={() => {
-                        try {
-                          updateShape(shape.id, {
-                             style: {
-                          ...shape.style, 
-                               backgroundColor: color,
-                                  },
-                          });
-                        } finally {
-                       setColorModal(false);
-                           }}}
-                    />
-                  ))}
-                </View>
-                <TouchableOpacity onPress={() => setColorModal(false)} style={[styles.cancelBtn, { alignSelf: 'center', marginTop: 12 }]}>
-                  <Text>Cancel</Text>
-                </TouchableOpacity>
-              </View>
+                      },
+                    });
+                    setColorModal(false);
+                  }}
+                />
+              ))}
+              <TouchableOpacity
+                style={{
+                  marginLeft: 12,
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  backgroundColor: '#FF3B30',
+                  borderRadius: 15,
+                }}
+                onPress={() => {
+                  console.log('Close button pressed');
+                  setColorModal(false);
+                }}
+              >
+                <Text style={{ fontSize: 14, color: 'white', fontWeight: 'bold' }}>✕</Text>
+              </TouchableOpacity>
             </View>
-          </Modal>
+          )}
         </>
       )}
       <GestureDetector gesture={isEditingText ? noOpGesture : panAndPinch}>
@@ -437,93 +497,119 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
             onPress={isEditingText ? undefined : handleTap}
             disabled={isEditingText}
           >
-            {/* Render kite as SVG with overlayed text or text input */}
-                         {shape.type === 'kite' ? (
-               <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                 {/* Background Image for kite */}
-                 {shape.backgroundImage && (
-                   <Image
-                     source={{ uri: shape.backgroundImage }}
-                     style={{
-                       position: 'absolute',
-                       width: '100%',
-                       height: '100%',
-                       resizeMode: shape.backgroundImageMode || 'cover',
-                     }}
-                   />
-                 )}
-                 <Svg width="100%" height="100%" viewBox="0 0 100 100" style={StyleSheet.absoluteFill}>
-                   <Polygon
-                     points="50,0 100,50 50,100 0,50"
-                     fill={shape.backgroundImage ? 'transparent' : (shape.style?.backgroundColor || '#3498db')}
-                     stroke="#34495e"
-                     strokeWidth="2"
-                   />
-                 </Svg>
-                {isEditingText ? (
-                  <View style={{ 
-                    width: '80%', 
-                    height: '60%', 
+            {/* Render kite as regular View with diamond styling */}
+            {shape.type === 'kite' ? (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={[
+                  {
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: shape.backgroundImage ? 'transparent' : (shape.style?.backgroundColor || '#3498db'),
+                    borderWidth: 2,
+                    borderColor: '#34495e',
+                    transform: [{ rotate: '45deg' }],
+                    overflow: 'hidden', // This will clip the image
+                  },
+                  isSelected && !shape.isLocked && styles.selectedBorder
+                ]}>
+                  {/* Background Image for kite */}
+                  {shape.backgroundImage && (
+                    <View style={{
+                      position: 'absolute',
+                      width: '141%', // Larger to account for rotation
+                      height: '141%', // Larger to account for rotation
+                      backgroundColor: 'transparent',
+                      zIndex: 1,
+                      transform: [{ rotate: '-45deg' }], // Counter-rotate to show image normally
+                      marginLeft: '-20%',
+                      marginTop: '-20%',
+                    }}>
+                      <Image
+                        source={{ uri: shape.backgroundImage }}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          resizeMode: shape.backgroundImageMode || 'cover',
+                        }}
+                      />
+                    </View>
+                  )}
+                  {/* Text content */}
+                  <View style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
                     justifyContent: 'center',
                     alignItems: 'center',
+                    zIndex: 2,
+                    transform: [{ rotate: '-45deg' }], // Counter-rotate text
                   }}>
-                    <TextInput
-                      ref={textInputRef}
-                      value={editText}
-                      onChangeText={setEditText}
-                      autoFocus={true}
-                      multiline={true}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        textAlign: 'center',
-                        textAlignVertical: 'center',
-                        fontSize: Math.max(12, Math.min(resizeWidth.value, resizeHeight.value) / 8),
-                        fontWeight: 'bold',
-                        color: '#333',
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        borderWidth: 2,
-                        borderColor: '#007AFF',
-                        borderRadius: 4,
-                        padding: 4,
-                        minHeight: 40,
-                      }}
-                      onBlur={handleSaveText}
-                      onEndEditing={handleSaveText}
-                      placeholder="Enter text..."
-                      placeholderTextColor="#999"
-                    />
-                    <TouchableOpacity 
-                      style={{
-                        position: 'absolute',
-                        top: 4,
-                        right: 4,
-                        backgroundColor: '#007AFF',
-                        borderRadius: 12,
-                        padding: 4,
-                        zIndex: 10,
-                      }}
-                      onPress={handleSaveText}
-                    >
-                      <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>Save</Text>
-                    </TouchableOpacity>
+                    {isEditingText ? (
+                      <View style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        padding: 8,
+                      }}>
+                        <TextInput
+                          ref={textInputRef}
+                          value={editText}
+                          onChangeText={setEditText}
+                          autoFocus={true}
+                          multiline={true}
+                          style={{
+                            width: '80%',
+                            height: '60%',
+                            textAlign: 'center',
+                            textAlignVertical: 'center',
+                            fontSize: Math.max(12, Math.min(resizeWidth.value, resizeHeight.value) / 8),
+                            fontWeight: 'bold',
+                            color: '#333',
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            borderWidth: 2,
+                            borderColor: '#007AFF',
+                            borderRadius: 4,
+                            padding: 4,
+                            minHeight: 40,
+                          }}
+                          onBlur={handleSaveText}
+                          onEndEditing={handleSaveText}
+                          placeholder="Enter text..."
+                          placeholderTextColor="#999"
+                        />
+                        <TouchableOpacity 
+                          style={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            backgroundColor: '#007AFF',
+                            borderRadius: 12,
+                            padding: 4,
+                            zIndex: 10,
+                          }}
+                          onPress={handleSaveText}
+                        >
+                          <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>Save</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      shape.text && shape.text.trim() && (
+                        <Text style={{
+                          width: '80%',
+                          textAlign: 'center',
+                          textAlignVertical: 'center',
+                          fontWeight: 'bold',
+                          color: '#000',
+                          fontSize: Math.max(12, Math.min(resizeWidth.value, resizeHeight.value) / 8),
+                          includeFontPadding: false,
+                        }}>
+                          {shape.text}
+                        </Text>
+                      )
+                    )}
                   </View>
-                ) : (
-                  shape.text && shape.text.trim() && (
-                    <Text style={{
-                      position: 'absolute',
-                      width: '80%',
-                      textAlign: 'center',
-                      textAlignVertical: 'center',
-                      fontWeight: 'bold',
-                      color: '#000',
-                      fontSize: Math.max(12, Math.min(resizeWidth.value, resizeHeight.value) / 8),
-                      includeFontPadding: false,
-                    }}>
-                      {shape.text}
-                    </Text>
-                  )
-                )}
+                </View>
               </View>
             ) : shape.type === 'image' && shape.uri ? (
               // Special handling for images - no background container
@@ -662,7 +748,10 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                   <TouchableOpacity style={styles.toolbarBtn} onPress={handleStartTextEdit}>
                     <Ionicons name="pencil" size={20} color="#333" />
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.toolbarBtn} onPress={() => setColorModal(true)}>
+                  <TouchableOpacity style={styles.toolbarBtn} onPress={() => {
+                    console.log('Color icon pressed, setting colorModal to true');
+                    setColorModal(true);
+                  }}>
                     <Ionicons name="color-palette" size={20} color="#333" />
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.toolbarBtn} onPress={handleAddImage}>
@@ -673,7 +762,8 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
             </Animated.View>
             {shape.isLocked && (
               <View style={styles.lockOverlay}>
-                <Ionicons name="lock-closed" size={24} color="white" />
+                <View style={styles.blurEffect} />
+                <Ionicons name="lock-closed" size={24} color="#666" />
               </View>
             )}
             {isSelected && !shape.isLocked && (
@@ -693,27 +783,46 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
               </>
             )}
           {/* Resize Handles */}
-{isSelected && !shape.isLocked && (
-  <>
-    {(['tl', 'tr', 'bl', 'br', 't', 'b', 'l', 'r'] as Anchor[]).map((anchor) => {
-      const handleStyle =
-        anchor === 'tl' ? handleTL :
-        anchor === 'tr' ? handleTR :
-        anchor === 'bl' ? handleBL :
-        anchor === 'br' ? handleBR :
-        anchor === 't'  ? handleT  :
-        anchor === 'b'  ? handleB  :
-        anchor === 'l'  ? handleL  :
-        handleR;
+          {isSelected && !shape.isLocked && (
+            <>
+              {shape.type === 'kite' ? (
+                // Special resize handles for kite shape (diamond)
+                <>
+                  <GestureDetector gesture={createResizeGesture('t')}>
+                    <Animated.View style={[handleT, { transform: [{ rotate: '45deg' }] }]} />
+                  </GestureDetector>
+                  <GestureDetector gesture={createResizeGesture('r')}>
+                    <Animated.View style={[handleR, { transform: [{ rotate: '45deg' }] }]} />
+                  </GestureDetector>
+                  <GestureDetector gesture={createResizeGesture('b')}>
+                    <Animated.View style={[handleB, { transform: [{ rotate: '45deg' }] }]} />
+                  </GestureDetector>
+                  <GestureDetector gesture={createResizeGesture('l')}>
+                    <Animated.View style={[handleL, { transform: [{ rotate: '45deg' }] }]} />
+                  </GestureDetector>
+                </>
+              ) : (
+                // Regular resize handles for other shapes
+                (['tl', 'tr', 'bl', 'br', 't', 'b', 'l', 'r'] as Anchor[]).map((anchor) => {
+                  const handleStyle =
+                    anchor === 'tl' ? handleTL :
+                    anchor === 'tr' ? handleTR :
+                    anchor === 'bl' ? handleBL :
+                    anchor === 'br' ? handleBR :
+                    anchor === 't'  ? handleT  :
+                    anchor === 'b'  ? handleB  :
+                    anchor === 'l'  ? handleL  :
+                    handleR;
 
-      return (
-        <GestureDetector key={anchor} gesture={createResizeGesture(anchor)}>
-          <Animated.View style={handleStyle} />
-        </GestureDetector>
-      );
-    })}
-  </>
-)}
+                  return (
+                    <GestureDetector key={anchor} gesture={createResizeGesture(anchor)}>
+                      <Animated.View style={handleStyle} />
+                    </GestureDetector>
+                  );
+                })
+              )}
+            </>
+          )}
 
           </TouchableOpacity>
         </Animated.View>
@@ -746,7 +855,7 @@ const styles = StyleSheet.create({
 },
   lockOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
@@ -782,20 +891,6 @@ const styles = StyleSheet.create({
   shapeText: {
     textAlign: 'center',
   },
-  modalOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    width: 250,
-    alignItems: 'stretch',
-  },
   textInput: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -803,10 +898,6 @@ const styles = StyleSheet.create({
     padding: 8,
     fontSize: 16,
     marginBottom: 8,
-  },
-  cancelBtn: {
-    marginRight: 16,
-    padding: 8,
   },
   saveBtn: {
     backgroundColor: '#3498db',
@@ -821,6 +912,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
     elevation: 2,
+  },
+  blurEffect: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    backdropFilter: 'blur(5px)', // Use backdropFilter for blur effect
   },
 });
 
