@@ -1,0 +1,97 @@
+{
+  "screen": "Settings",
+  "layout": [
+    {
+      "type": "section",
+      "title": "Preferences",
+      "style": {
+        "margin": 16
+      },
+      "children": [
+        {
+          "type": "switch",
+          "key": "darkMode",
+          "label": "Dark Mode",
+          "default": false
+        },
+        {
+          "type": "switch",
+          "key": "notifications",
+          "label": "Push Notifications",
+          "default": true
+        },
+        {
+          "type": "dropdown",
+          "key": "language",
+          "label": "App Language",
+          "options": ["English", "Spanish", "French", "Arabic"],
+          "default": "English"
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "title": "Security",
+      "style": {
+        "margin": 16
+      },
+      "children": [
+        {
+          "type": "button",
+          "key": "changePassword",
+          "label": "Change Password",
+          "icon": "lock-closed-outline",
+          "style": {
+            "backgroundColor": "#2196F3",
+            "color": "#fff",
+            "padding": 12,
+            "borderRadius": 8
+          }
+        },
+        {
+          "type": "switch",
+          "key": "2fa",
+          "label": "Enable Two-Factor Authentication",
+          "default": false
+        }
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "title": "About",
+      "style": {
+        "margin": 16
+      },
+      "children": [
+        {
+          "type": "text",
+          "key": "appVersion",
+          "label": "App Version",
+          "value": "1.0.3"
+        },
+        {
+          "type": "button",
+          "key": "privacyPolicy",
+          "label": "Privacy Policy"
+        }
+      ]
+    },
+    {
+      "type": "button",
+      "key": "logout",
+      "label": "Log Out",
+      "icon": "log-out-outline",
+      "style": {
+        "marginTop": 30,
+        "padding": 12,
+        "backgroundColor": "#f44336",
+        "color": "#fff",
+        "borderRadius": 10,
+        "alignSelf": "center"
+      }
+    }
+  ]
+}

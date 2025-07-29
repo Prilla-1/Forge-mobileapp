@@ -155,6 +155,7 @@ const initialTemplates: Template[] = [
       { id: 't4_l3', startShapeId: 't4_decision', endShapeId: 't4_option_b', label: 'No' },
     ],
   },
+  //Template 5: Landing Page 
  {
   id: 'landingPageTemplate',
   name: 'Landing Page Preview',
@@ -220,6 +221,7 @@ const initialTemplates: Template[] = [
     { id: 'l3', startShapeId: 'cta', endShapeId: 'footer', label: '' },
   ],
 },
+//Template 6: Login UI
 {
   id: 'template_login_ui',
   name: 'Login Page - Shadowed UI',
@@ -343,80 +345,243 @@ const initialTemplates: Template[] = [
     {
       id: 'logo',
       type: 'oval',
-      position: { x: 130, y: 40 },
+      position: { x: 140, y: 40 },
       style: {
-        width: 100,
-        height: 100,
-        backgroundColor: '#BBDEFB',
-        borderRadius: 50,
+        width: 120,
+        height: 120,
+        backgroundColor: '#1976D2',
+        borderRadius: 60,
       },
       text: 'Logo',
     },
     {
       id: 'title',
       type: 'text',
-      position: { x: 140, y: 150 },
+      position: { x: 90, y: 180 },
       style: {
-        width: 120,
+        width: 240,
         height: 40,
-        fontSize: 20,
-        backgroundColor: '#FFFFFF',
+        fontSize: 26,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        backgroundColor: 'transparent',
+        color: '#333',
       },
-      text: 'Welcome Back',
+      text: 'Welcome Back!',
     },
     {
       id: 'emailInput',
       type: 'rectangle',
-      position: { x: 70, y: 200 },
+      position: { x: 40, y: 250 },
       style: {
-        width: 240,
-        height: 50,
-        backgroundColor: '#F1F1F1',
+        width: 300,
+        height: 48,
+        backgroundColor: '#FFFFFF',
+        borderColor: '#CCCCCC',
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingLeft: 12,
       },
-      text: 'Email',
+      text: 'Email Address',
     },
     {
       id: 'passwordInput',
       type: 'rectangle',
-      position: { x: 70, y: 270 },
+      position: { x: 40, y: 310 },
       style: {
-        width: 240,
-        height: 50,
-        backgroundColor: '#F1F1F1',
+        width: 300,
+        height: 48,
+        backgroundColor: '#FFFFFF',
+        borderColor: '#CCCCCC',
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingLeft: 12,
       },
       text: 'Password',
     },
     {
       id: 'loginBtn',
       type: 'rectangle',
-      position: { x: 70, y: 340 },
+      position: { x: 40, y: 380 },
       style: {
-        width: 240,
+        width: 300,
         height: 50,
-        backgroundColor: '#4CAF50',
+        backgroundColor: '#1976D2',
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        textAlign: 'center',
       },
       text: 'Log In',
     },
     {
-      id: 'loginPreviewImg',
+      id: 'forgotText',
+      type: 'text',
+      position: { x: 200, y: 440 },
+      style: {
+        width: 140,
+        height: 30,
+        fontSize: 14,
+        textAlign: 'right',
+        color: '#1976D2',
+        backgroundColor: 'transparent',
+      },
+      text: 'Forgot Password?',
+    },
+    {
+      id: 'sideImage',
       type: 'image',
-      position: { x: 250, y: 200 },
+      position: { x: 360, y: 250 },
       style: {
         width: 60,
-        height: 100,
+        height: 120,
+        borderRadius: 12,
       },
-      uri: 'https://via.placeholder.com/60x100.png?text=User', // example image preview
+      uri: 'https://via.placeholder.com/60x120.png?text=User',
     },
   ],
   lines: [
-    { id: 'l1', startShapeId: 'logo', endShapeId: 'title', label: '' },
-    { id: 'l2', startShapeId: 'title', endShapeId: 'emailInput', label: '' },
-    { id: 'l3', startShapeId: 'emailInput', endShapeId: 'passwordInput', label: '' },
-    { id: 'l4', startShapeId: 'passwordInput', endShapeId: 'loginBtn', label: '' },
+    { id: 'line1', startShapeId: 'logo', endShapeId: 'title', label: '' },
+    { id: 'line2', startShapeId: 'title', endShapeId: 'emailInput', label: '' },
+    { id: 'line3', startShapeId: 'emailInput', endShapeId: 'passwordInput', label: '' },
+    { id: 'line4', startShapeId: 'passwordInput', endShapeId: 'loginBtn', label: '' },
+    { id: 'line5', startShapeId: 'loginBtn', endShapeId: 'forgotText', label: '' },
   ],
 },
+//food app template
+{
+  id: 'foodAppHomeTemplate',
+  name: 'Food App Landing Screen',
+  shapes: [
+    // Logo Icon
+    {
+      id: 'logo',
+      type: 'circle',
+      position: { x: 170, y: 40 },
+      style: {
+        width: 60,
+        height: 60,
+        backgroundColor: '#FF7043',
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      text: '🍴',
+    },
 
+    // Welcome Title
+    {
+      id: 'title',
+      type: 'text',
+      position: { x: 100, y: 120 },
+      style: {
+        width: 200,
+        height: 40,
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#333',
+        backgroundColor: 'transparent',
+        textAlign: 'center',
+      },
+      text: 'Delicious Meals\nDelivered Fast',
+    },
 
+    // Search Bar
+    {
+      id: 'searchBar',
+      type: 'rectangle',
+      position: { x: 40, y: 190 },
+      style: {
+        width: 300,
+        height: 48,
+        backgroundColor: '#F1F3F4',
+        borderRadius: 12,
+        borderColor: '#E0E0E0',
+        borderWidth: 1,
+        paddingLeft: 16,
+        fontSize: 16,
+        color: '#333',
+      },
+      text: 'Search for meals...',
+    },
+
+    // Featured Dish Card
+    {
+      id: 'featuredCard',
+      type: 'rectangle',
+      position: { x: 40, y: 260 },
+      style: {
+        width: 300,
+        height: 160,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 6,
+      },
+      text: '',
+    },
+
+    // Dish Image (masked into rectangle)
+    {
+      id: 'dishImage',
+      type: 'image',
+      position: { x: 40, y: 260 },
+      style: {
+        width: 300,
+        height: 160,
+        borderRadius: 16,
+      },
+      uri: 'https://via.placeholder.com/300x160.png?text=Pasta+Bowl',
+      maskedShape: 'rectangle',
+    },
+
+    ...['Pizza', 'Burger', 'Drinks', 'Dessert'].map((cat, i) =>
+  ({
+    id: `catBtn${i}`,
+    type: 'rectangle',
+    position: { x: 40 + i * 80, y: 440 },
+    style: {
+      width: 70,
+      height: 70,
+      backgroundColor: '#FFF3E0',
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOpacity: 0.05,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 4,
+    },
+    text: cat,
+  } as ShapeType) // ✅ assertion fixes the type
+),
+
+    // Order Now Button
+    {
+      id: 'orderBtn',
+      type: 'rectangle',
+      position: { x: 40, y: 540 },
+      style: {
+        width: 300,
+        height: 52,
+        backgroundColor: '#FF5722',
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      text: 'Order Now',
+    },
+  ],
+
+  lines: [
+    { id: 'line1', startShapeId: 'logo', endShapeId: 'title', label: '' },
+    { id: 'line2', startShapeId: 'title', endShapeId: 'searchBar', label: '' },
+    { id: 'line3', startShapeId: 'searchBar', endShapeId: 'dishImage', label: '' },
+    { id: 'line4', startShapeId: 'dishImage', endShapeId: 'catBtn0', label: '' },
+    { id: 'line5', startShapeId: 'catBtn0', endShapeId: 'orderBtn', label: '' },
+  ],
+}
 ];
 
 
@@ -546,27 +711,32 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setTrash([]);
   };
 
-  const addImageFromGallery = async () => {
-    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!granted) return Alert.alert('Permission Denied');
+ const addImageFromGallery = async () => {
+  const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!granted) return Alert.alert('Permission Denied');
 
-    const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
+  const res = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    quality: 1,
+  });
+
+  if (!res.canceled && res.assets.length) {
+    const img = res.assets[0];
+    const newShape: ShapeType = {
+      id: generateUUID(),
+      type: 'image',
+      uri: img.uri,
+      position: { x: 100, y: 100 },
+      style: { width: 150, height: 150 },
+    };
+
+    setShapes(prev => {
+      const updated = [...prev, newShape];
+      saveToHistory(updated);
+      return updated;
     });
-
-    if (!res.canceled && res.assets.length) {
-      const img = res.assets[0];
-      const newShape: ShapeType = {
-        id: generateUUID(),
-        type: 'image',
-        uri: img.uri,
-        position: { x: 100, y: 100 },
-        style: { width: 150, height: 150 },
-      };
-      saveToHistory([...shapes, newShape]);
-    }
-  };
+  }
+};
 
   const addTextShape = () => {
     const newShape: ShapeType = {

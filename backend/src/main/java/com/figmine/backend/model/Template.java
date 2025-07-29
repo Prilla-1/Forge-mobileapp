@@ -20,6 +20,18 @@ public class Template {
     private String shapes; // Store JSON string of shapes
 
     @Column(columnDefinition = "TEXT")
-    private String lines;  // Store JSON string of lines
+    private String lines;  // Store JSON string of line
+    
+@Column
+private String imageUrl;
+
+public String getImageUrl() {
+    return imageUrl;
+}
+
+public void setImageUrl(String imageUrl) {
+    this.imageUrl = imageUrl;
+}
+
     
 }

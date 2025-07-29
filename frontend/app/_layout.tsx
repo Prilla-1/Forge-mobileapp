@@ -6,10 +6,12 @@ import { ProjectProvider } from '../context/ProjectContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SearchProvider from '../context/SearchContext';
+import { ThemeProvider } from '@/context/ThemeContext';
 
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
       <UserProvider>
       <SafeAreaProvider>
         <SearchProvider>
@@ -21,6 +23,7 @@ export default function RootLayout() {
         </SearchProvider>
       </SafeAreaProvider>
       </UserProvider>
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }

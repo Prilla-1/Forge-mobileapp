@@ -1,4 +1,4 @@
-import React, { useState,useRef,forwardRef} from 'react';
+import React, { useState,useRef,forwardRef,useEffect} from 'react';
 import type { RefObject } from 'react';
 import { View, Text,StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,7 +9,8 @@ import { useCanvas } from '../../../context/CanvasContext';
 import Canvas from '../../components/Canvas';
 import { captureRef } from 'react-native-view-shot';
 import ViewShot from 'react-native-view-shot';
-
+import uuid from 'react-native-uuid';
+import { useLocalSearchParams } from 'expo-router';
 
 export default function CanvasScreen() {
   const router = useRouter();
@@ -29,20 +30,38 @@ const previewInMirror = async () => {
   }
 };
 
-  const {
-    shapes,
-    lines,
-    addShape,
-    addLine,
-    undo,
-    redo,
-    deleteToTrash,
-    selectedShapeId,
-    setPreviewLine,
-  } = useCanvas();
+ const {
+  shapes,
+  setShapes,
+  lines,
+  setLines,
+  addShape,
+  addLine,
+  undo,
+  redo,
+  deleteToTrash,
+  selectedShapeId,
+  setPreviewLine,
+} = useCanvas();
+
 
   const [connectMode, setConnectMode] = useState(false);
   const [connectStartShapeId, setConnectStartShapeId] = useState<string | null>(null);
+  const { shapes: paramShapes, lines: paramLines } = useLocalSearchParams();
+
+  useEffect(() => {
+  if (typeof paramShapes === 'string' && typeof paramLines === 'string') {
+    try {
+      const parsedShapes = JSON.parse(paramShapes);
+      const parsedLines = JSON.parse(paramLines);
+      setShapes(parsedShapes);
+      setLines(parsedLines);
+    } catch (error) {
+      console.error('Failed to parse shapes/lines:', error);
+    }
+  }
+}, [paramShapes, paramLines]);
+
 
   const panX = useSharedValue(0);
   const panY = useSharedValue(0);
@@ -91,23 +110,43 @@ const previewInMirror = async () => {
     }
   };
 
-  const handleSave = async () => {
-    try {
-      const response = await fetch('http://10.21.192.165:8081/api/templates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shapes, lines }),
-      });
+const saveAsTemplate = async () => {
+  const templateId = uuid.v4();
 
-      if (response.ok) {
-        Alert.alert('Success', 'Template saved to backend!');
-      } else {
-        Alert.alert('Error', 'Failed to save template.');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Something went wrong while saving.');
-    }
-  };
+  try {
+    const response = await fetch('http://10.212.110.165:8081/api/templates/seed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: templateId,
+        name: 'My First Template',
+        shapes:shapes,
+        lines:lines,
+      }),
+    });
+
+    const text = await response.text();
+    alert('Template saved: ' + text);
+  } catch (err) {
+    alert('Failed to save template');
+    console.error(err);
+  }
+};
+
+const params = useLocalSearchParams();
+useEffect(() => {
+  if (params.shapes && params.lines) {
+    const shapeStr = Array.isArray(params.shapes) ? params.shapes[0] : params.shapes;
+    const lineStr = Array.isArray(params.lines) ? params.lines[0] : params.lines;
+
+    const parsedShapes = JSON.parse(shapeStr);
+    const parsedLines = JSON.parse(lineStr);
+
+    setShapes(parsedShapes);
+    setLines(parsedLines);
+  }
+}, []);
+
 
   const captureCanvas = async () => {
   try {
@@ -183,12 +222,9 @@ const previewInMirror = async () => {
           }}>
           <Ionicons name="git-compare-outline" size={28} color={connectMode ? '#fff' : '#A07BB7'} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSave}>
-          <Ionicons name="save-outline" size={28} color="#00C853" />
-        </TouchableOpacity>
-         <View><TouchableOpacity style={styles.Button} onPress={previewInMirror}>
+         <TouchableOpacity style={styles.Button} onPress={previewInMirror}>
   <Text style={styles.buttonText}>Preview</Text>
-</TouchableOpacity></View>
+</TouchableOpacity>
 
       </View>
     </View>
@@ -244,22 +280,16 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   Button: {
-    borderRadius: 12,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#A07BB7',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: '#5b086eff',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
   },
   buttonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 10,
+    color: '#FFF',
     fontWeight: 'bold',
-    letterSpacing: 1,
+    fontSize: 14,
+    textAlign: 'center',
   },
   rectIcon: {
     width: 28,

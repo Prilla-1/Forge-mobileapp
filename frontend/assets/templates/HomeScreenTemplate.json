@@ -1,0 +1,66 @@
+
+{
+  "id": "template-home-1",
+  "name": "Home Screen",
+  "type": "template",
+  "shapes": [
+    {
+      "id": "home-header",
+      "type": "text",
+      "x": 20,
+      "y": 40,
+      "text": "Welcome Back!",
+      "fontSize": 24,
+      "color": "#222222",
+      "fontWeight": "bold"
+    },
+    {
+      "id": "home-subheader",
+      "type": "text",
+      "x": 20,
+      "y": 80,
+      "text": "Here's what's new today",
+      "fontSize": 16,
+      "color": "#666666"
+    },
+    {
+      "id": "card-1",
+      "type": "rectangle",
+      "x": 20,
+      "y": 120,
+      "width": 320,
+      "height": 150,
+      "color": "#ffffff",
+      "borderRadius": 16,
+      "shadow": true,
+      "label": "News / Update Card"
+    },
+    {
+      "id": "card-2",
+      "type": "rectangle",
+      "x": 20,
+      "y": 290,
+      "width": 320,
+      "height": 100,
+      "color": "#ffffff",
+      "borderRadius": 12,
+      "shadow": true,
+      "label": "Quick Actions"
+    },
+    {
+      "id": "nav-bar",
+      "type": "bottomNav",
+      "x": 0,
+      "y": 720,
+      "width": 360,
+      "height": 60,
+      "items": [
+        { "icon": "home", "label": "Home" },
+        { "icon": "search", "label": "Search" },
+        { "icon": "user", "label": "Profile" }
+      ],
+      "backgroundColor": "#f0f0f0",
+      "activeColor": "#2a9d8f"
+    }
+  ]
+}
