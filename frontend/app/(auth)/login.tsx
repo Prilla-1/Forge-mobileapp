@@ -67,27 +67,36 @@ export default function LoginScreen() {
 
   setLoading(true);
   try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+    // Mock login - no backend call
+    // const response = await fetch(API_URL, {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ email, password }),
+    // });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log("Login failed:", response.status, errorText);
-      setError(`Login failed: ${response.status} - ${errorText}`);
-      setLoading(false);
-      return;
-    }
+    // if (!response.ok) {
+    //   const errorText = await response.text();
+    //   console.log("Login failed:", response.status, errorText);
+    //   setError(`Login failed: ${response.status} - ${errorText}`);
+    //   setLoading(false);
+    //   return;
+    // }
 
-    const data = await response.json();
-    const token = data.token;
-    const username = data.name; 
+    // const data = await response.json();
+    // const token = data.token;
+    // const username = data.name; 
 
+    // Mock successful login
+    const username = email.split('@')[0]; // Use email prefix as username
+    const token = 'mock-token-' + Date.now();
+
+    // ✅ Save user info to context
     setUser({ username });
+
+    // (Optional) Save token to AsyncStorage
     await AsyncStorage.setItem('token', token);
     await AsyncStorage.setItem('username', username);
+
     router.replace('/(drawer)/(tabs)/mirror');
   } catch (err) {
     console.error('Login error:', err);
