@@ -46,6 +46,8 @@ export interface ShapeType {
   width?:number;
   height?:number;
   maskedShape?:'rectangle' | 'circle' | 'oval' | 'diamond' | 'square';
+  backgroundImage?: string;
+  backgroundImageMode?: 'cover' | 'contain' | 'stretch';
 }
 
 export type ShapeData = {

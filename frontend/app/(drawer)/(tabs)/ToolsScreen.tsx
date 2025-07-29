@@ -6,9 +6,11 @@ import { generateUUID } from '@/utils/generateUUID';
 import { ShapeType } from '../../../constants/type';
 import Svg, { Polygon } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 
 export default function ToolsScreen() {
   const { addShape: addShapeToCanvas, undo, redo, saveToHistory, addImageFromGallery } = useCanvas();
+  const router = useRouter();
 
   const createShapeStyle = (type: string) => {
     const base = {
@@ -43,9 +45,21 @@ export default function ToolsScreen() {
     }
 
     addShapeToCanvas(shape);
+    // Navigate to Canvas screen immediately after adding shape
+    setTimeout(() => {
+      router.push('/(drawer)/(tabs)/CanvasScreen');
+    }, 100);
   };
 
   const deleteAll = () => saveToHistory([]);
+
+  const handleAddImage = async () => {
+    await addImageFromGallery();
+    // Navigate to Canvas screen after adding image
+    setTimeout(() => {
+      router.push('/(drawer)/(tabs)/CanvasScreen');
+    }, 100);
+  };
 
   const tools = [
     { 
@@ -72,7 +86,7 @@ export default function ToolsScreen() {
       action: () => addShape('kite'),
     },
     { name: 'Add Text', icon: 'text', action: () => addShape('text') },
-    { name: 'Insert Image', icon: 'image-outline', action: addImageFromGallery },
+    { name: 'Insert Image', icon: 'image-outline', action: handleAddImage },
     { name: 'Undo', icon: 'arrow-undo-outline', action: undo },
     { name: 'Redo', icon: 'arrow-redo-outline', action: redo },
   ];

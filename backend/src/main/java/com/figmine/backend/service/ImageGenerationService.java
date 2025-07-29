@@ -1,25 +1,34 @@
 package com.figmine.backend.service;
 
+import com.figmine.backend.config.ApiConfig;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
 
 import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
 
 @Service
 public class ImageGenerationService {
 
     private final RestTemplate restTemplate = new RestTemplate();
+    
+    @Autowired
+    private ApiConfig apiConfig;
 
     public String generateImage(String prompt) {
-        String stableDiffusionUrl = "http://127.0.0.1:7860/sdapi/v1/txt2img";
+        String stableDiffusionUrl = apiConfig.getStableDiffusionApiUrl();
 
-        // Prepare request body
-        Map<String, Object> requestBody = Map.of(
-            "prompt", prompt,
-            "steps", 25,
-            "cfg_scale", 7
-        );
+        // Prepare request body with complete Stable Diffusion parameters
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("prompt", prompt);
+        requestBody.put("steps", 25);
+        requestBody.put("cfg_scale", 7);
+        requestBody.put("sampler_index", "Euler");
+        requestBody.put("width", 512);
+        requestBody.put("height", 512);
 
         // Prepare headers
         HttpHeaders headers = new HttpHeaders();
@@ -30,11 +39,19 @@ public class ImageGenerationService {
         try {
             ResponseEntity<Map> response = restTemplate.postForEntity(stableDiffusionUrl, entity, Map.class);
 
-            if (response.getStatusCode().is2xxSuccessful()) {
-                // Extract base64 image and save or return dummy image URL for now
-                return "http://127.0.0.1:7860/generated/output.png";
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Object imagesObject = response.getBody().get("images");
+                
+                if (imagesObject instanceof List<?> images && !images.isEmpty()) {
+                    Object firstImage = images.get(0);
+                    if (firstImage instanceof String base64Image) {
+                        return base64Image; // Return the actual base64 image
+                    }
+                }
+                
+                throw new RuntimeException("No valid image found in Stable Diffusion response");
             } else {
-                throw new RuntimeException("Failed to generate image.");
+                throw new RuntimeException("Stable Diffusion API returned error: " + response.getStatusCode());
             }
         } catch (Exception e) {
             e.printStackTrace();

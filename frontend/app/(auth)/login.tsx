@@ -11,7 +11,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Eas
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useUser} from '../../context/UserContext';
 
-const API_URL = 'http://10.212.110.165:8081/api/auth/login';
+// const API_URL = 'http://10.212.110.165:8081/api/auth/login';
 
 
 export default function LoginScreen() {
