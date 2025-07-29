@@ -42,7 +42,7 @@ export default function SettingsScreen() {
   const [editingName, setEditingName] = useState(false);
   const [dirty, setDirty] = useState(false);
   const nameInputRef = useRef(null);
-  const [email] = useState('user@email.com');
+  const [email, setEmail] = useState(user?.email || 'user@email.com');
   const { theme, toggleTheme } = useTheme();
   const [profileImage, setProfileImage] = useState<string | null>(null);
 

@@ -114,25 +114,21 @@ const saveAsTemplate = async () => {
   const templateId = uuid.v4();
 
   try {
-    // Mock save - no backend call
-    // const response = await fetch('http://10.212.110.165:8081/api/templates/seed', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     id: templateId,
-    //     name: 'My First Template',
-    //     shapes:shapes,
-    //     lines:lines,
-    //   }),
-    // });
+    const response = await fetch('http://10.212.110.165:8081/api/templates/seed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: templateId,
+        name: 'My First Template',
+        shapes:shapes,
+        lines:lines,
+      }),
+    });
 
-    // const text = await response.text();
-    // alert('Template saved: ' + text);
-
-    // Mock successful save
-    alert('Template saved locally!');
+    const text = await response.text();
+    alert('Template saved: ' + text);
   } catch (err) {
-    alert('Failed to save template locally');
+    alert('Failed to save template');
     console.error(err);
   }
 };
@@ -206,12 +202,14 @@ useEffect(() => {
       <View style={styles.bottomToolbar}>
         <TouchableOpacity onPress={undo}><Ionicons name="arrow-undo" size={28} color="black" /></TouchableOpacity>
         <TouchableOpacity onPress={redo}><Ionicons name="arrow-redo-sharp" size={28} color="black" /></TouchableOpacity>
-        <TouchableOpacity onPress={() => addShape({ id: Date.now().toString(), type: 'rectangle', position: { x: 150, y: 150 }, style: { width: 150, height: 100, backgroundColor: '#3498db' } })}>
-          <View style={styles.rectIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => addShape({ id: Date.now().toString(), type: 'oval', position: { x: 200, y: 200 }, style: { width: 140, height: 70, backgroundColor: '#e74c3c', borderRadius: 35 } })}>
-          <View style={styles.ovalIcon} />
-        </TouchableOpacity>
+        <View style={styles.shapeToolsContainer}>
+          <TouchableOpacity onPress={() => addShape({ id: Date.now().toString(), type: 'rectangle', position: { x: 150, y: 150 }, style: { width: 150, height: 100, backgroundColor: '#3498db' } })}>
+            <View style={styles.rectIcon} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => addShape({ id: Date.now().toString(), type: 'oval', position: { x: 200, y: 200 }, style: { width: 140, height: 70, backgroundColor: '#e74c3c', borderRadius: 35 } })}>
+            <View style={styles.ovalIcon} />
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity onPress={() => router.push('/(drawer)/(tabs)/Templates')}>
           <Ionicons name="albums-outline" size={28} color="black" />
         </TouchableOpacity>
@@ -271,7 +269,7 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     alignItems: 'center',
     padding: 12,
     backgroundColor: '#fff',
@@ -302,7 +300,6 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     backgroundColor: 'transparent',
     borderRadius: 2,
-    marginRight: 8,
   },
   ovalIcon: {
     width: 28,
@@ -311,6 +308,10 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     backgroundColor: 'transparent',
     borderRadius: 14,
-    marginLeft: 8,
+  },
+  shapeToolsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8, // Add 8px gap between rectangle and oval
   },
 });

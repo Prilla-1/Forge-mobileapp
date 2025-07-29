@@ -3,7 +3,7 @@ import React, { createContext, useContext,useEffect, useState, ReactNode } from 
 
 type User = {
   username: string;
-  // You can add more fields like email, id, etc.
+  email: string;
 };
 
 type UserContextType = {
@@ -21,8 +21,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const loadUser = async () => {
       const savedUsername = await AsyncStorage.getItem('username');
-      if (savedUsername) {
-        setUser({ username: savedUsername });
+      const savedEmail = await AsyncStorage.getItem('email');
+      if (savedUsername && savedEmail) {
+        setUser({ username: savedUsername, email: savedEmail });
       }
     };
     loadUser();

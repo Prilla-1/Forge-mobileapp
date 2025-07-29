@@ -11,7 +11,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Eas
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useUser} from '../../context/UserContext';
 
-// const API_URL = 'http://10.212.110.165:8081/api/auth/login';
+const API_URL = 'http://10.212.110.165:8081/api/auth/login';
 
 
 export default function LoginScreen() {
@@ -67,35 +67,29 @@ export default function LoginScreen() {
 
   setLoading(true);
   try {
-    // Mock login - no backend call
-    // const response = await fetch(API_URL, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ email, password }),
-    // });
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-    // if (!response.ok) {
-    //   const errorText = await response.text();
-    //   console.log("Login failed:", response.status, errorText);
-    //   setError(`Login failed: ${response.status} - ${errorText}`);
-    //   setLoading(false);
-    //   return;
-    // }
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log("Login failed:", response.status, errorText);
+      setError(`Login failed: ${response.status} - ${errorText}`);
+      setLoading(false);
+      return;
+    }
 
-    // const data = await response.json();
-    // const token = data.token;
-    // const username = data.name; 
+    const data = await response.json();
+    const token = data.token;
+    const username = data.name;
+    const emailFromBackend = data.email || email;
 
-    // Mock successful login
-    const username = email.split('@')[0]; // Use email prefix as username
-    const token = 'mock-token-' + Date.now();
-
-    // ✅ Save user info to context
-    setUser({ username });
-
-    // (Optional) Save token to AsyncStorage
+    setUser({ username, email: emailFromBackend });
     await AsyncStorage.setItem('token', token);
     await AsyncStorage.setItem('username', username);
+    await AsyncStorage.setItem('email', emailFromBackend);
 
     router.replace('/(drawer)/(tabs)/mirror');
   } catch (err) {

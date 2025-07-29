@@ -54,7 +54,6 @@ const PromptScreen = () => {
       }
 
       setStatus('Generating image...');
-
       const response = await fetch('http://10.212.110.165:8081/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
