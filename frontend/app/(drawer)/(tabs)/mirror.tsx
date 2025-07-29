@@ -85,7 +85,7 @@ export default function MirrorScreen() {
 
   // Auto-fit effect: recalculate when shapes, canvasWidth, canvasHeight, manualScale, or fitToScreenRequested changes
   useEffect(() => {
-    if (shapes.length === 0 || canvasWidth === 0 || canvasHeight === 0) return;
+    if (shapes.length === 0) return;
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
@@ -99,6 +99,10 @@ export default function MirrorScreen() {
       maxY = Math.max(maxY, y + height);
     });
 
+    // Use the device frame size for available space
+    const availableWidth = 340;
+    const availableHeight = 700;
+
     // Add some padding around the flowchart
     const padding = 20;
     minX -= padding;
@@ -109,18 +113,13 @@ export default function MirrorScreen() {
     const flowWidth = maxX - minX;
     const flowHeight = maxY - minY;
     
-    // Use the measured canvas area for available space
-    const availableWidth = canvasWidth;
-    const availableHeight = canvasHeight;
-    
     const scaleX = availableWidth / flowWidth;
     const scaleY = availableHeight / flowHeight;
     
-    const MIN_SCALE = 0.5; // Minimum allowed scale for fit-to-screen
-    // Use the smaller scale to fit everything, but don't go below MIN_SCALE
+    const MIN_SCALE = 0.5;
     const computedScale = Math.max(Math.min(scaleX, scaleY), MIN_SCALE);
 
-    // Center the flowchart
+    // Center the flowchart in the frame
     const offsetX = (availableWidth - flowWidth * computedScale) / 2 - minX * computedScale;
     const offsetY = (availableHeight - flowHeight * computedScale) / 2 - minY * computedScale;
 
@@ -129,7 +128,7 @@ export default function MirrorScreen() {
       setScale(computedScale);
       setOffset({ x: offsetX, y: offsetY });
     }
-  }, [shapes, canvasWidth, canvasHeight, manualScale, fitToScreenRequested]);
+  }, [shapes, manualScale, fitToScreenRequested]);
 
   // When manualScale changes, update scale and offset
   useEffect(() => {
@@ -191,7 +190,7 @@ export default function MirrorScreen() {
 
         const textStyle: TextStyle = {
           fontSize: (style?.fontSize || 16) * scale,
-          color: style?.color || '#000',
+          color: shape.fontColor || style?.color || '#000',
           textAlign: 'center',
           transform: type === 'diamond' ? [{ rotate: '-45deg' }] : [],
         };
@@ -249,7 +248,19 @@ export default function MirrorScreen() {
                 );
               })()
             )}
-            {text && <Text style={[textStyle, { zIndex: 3 }]}>{text}</Text>}
+            {text && <Text style={{
+              position: 'absolute',
+              width: '100%',
+              textAlign: 'center',
+              textAlignVertical: 'center',
+              fontWeight: 'bold',
+              color: shape.fontColor || style?.color || '#000',
+              fontSize: shape.fontSize || style?.fontSize || 16,
+              includeFontPadding: false,
+              paddingHorizontal: 4,
+              paddingVertical: 2,
+              zIndex: 3,
+            }}>{text}</Text>}
           </View>
         );
       }
@@ -306,13 +317,16 @@ export default function MirrorScreen() {
             {text && text.trim() && (
               <Text style={{
                 position: 'absolute',
-                width: '80%',
+                width: '100%',
                 textAlign: 'center',
                 textAlignVertical: 'center',
                 fontWeight: 'bold',
-                color: '#000',
-                fontSize: Math.max(12, ((style?.width || 100) * scale) / 8),
+                color: shape.fontColor || style?.color || '#000',
+                fontSize: shape.fontSize || style?.fontSize || 16,
                 includeFontPadding: false,
+                paddingHorizontal: 4,
+                paddingVertical: 2,
+                zIndex: 3,
               }}>
                 {text}
               </Text>
@@ -323,9 +337,13 @@ export default function MirrorScreen() {
       case 'text': {
         const textPositionStyle: TextStyle = {
           ...basePosition,
-          fontSize: (style?.fontSize || 16) * scale,
-          color: style?.color || '#000',
+          fontSize: shape.fontSize || style?.fontSize || 16,
+          color: shape.fontColor || style?.color || '#000',
           textAlign: 'center',
+          fontWeight: 'bold',
+          includeFontPadding: false,
+          paddingHorizontal: 4,
+          paddingVertical: 2,
         };
 
         return (
@@ -421,8 +439,8 @@ export default function MirrorScreen() {
         };
 
         const textStyle: TextStyle = {
-          fontSize: (style?.fontSize || 16) * scale,
-          color: style?.color || '#000',
+          fontSize: shape.fontSize || style?.fontSize || 16,
+          color: shape.fontColor || style?.color || '#000',
           textAlign: 'center',
         };
 
@@ -555,20 +573,21 @@ export default function MirrorScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      <View style={{ flex: 1, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' }}>
+        <View style={styles.deviceFrame}>
         <View
           ref={canvasRef}
           collapsable={false}
           style={styles.canvas}
-          onLayout={e => {
-            setCanvasWidth(e.nativeEvent.layout.width);
-            setCanvasHeight(e.nativeEvent.layout.height);
+            onLayout={() => {
+              setCanvasWidth(340);
+              setCanvasHeight(700);
           }}
         >
           {renderLines()}
           {shapes.map(shape => renderShape(shape))}
         </View>
-
+        </View>
         {/* Unified Vertical Toolbar: AI Button + Fit to Screen */}
         <View style={styles.toolbarColumn}>
           <TouchableOpacity
@@ -585,14 +604,12 @@ export default function MirrorScreen() {
           </TouchableOpacity>
         </View>
       </View>
-
       <View style={styles.footer} onLayout={e => setFooterHeight(e.nativeEvent.layout.height)}>
         <TouchableOpacity onPress={exportToPng} style={styles.exportButton}>
           <Ionicons name="download-outline" size={24} color="#fff" />
           <Text style={styles.exportText}>Export PNG</Text>
         </TouchableOpacity>
       </View>
-
       {/* Custom Success Modal */}
       <Modal
         visible={showSuccessModal}
@@ -746,5 +763,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
     shadowRadius: 2,
+  },
+  deviceFrame: {
+    width: 340,
+    height: 700,
+    backgroundColor: '#fff',
+    borderRadius: 40,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 8 },
+    borderWidth: 3,
+    borderColor: '#bbb',
+    marginVertical: 24,
+    overflow: 'hidden',
   },
 });

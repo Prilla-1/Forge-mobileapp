@@ -53,24 +53,45 @@ export default function TemplateScreen() {
       const parsedLines =
         typeof template.lines === 'string' ? JSON.parse(template.lines) : template.lines;
 
-      const sanitizedShapes = parsedShapes.map((shape: any) => ({
-        ...shape,
-        position: shape.position ?? { x: 0, y: 0 },
-        style: {
-          width: shape.style?.width ?? 100,
-          height: shape.style?.height ?? 100,
-          backgroundColor: shape.style?.backgroundColor ?? '#ffffff',
-          borderRadius: shape.style?.borderRadius ?? 0,
-        },
-        color: shape.color ?? '#000000',
-        fontSize: shape.fontSize ?? 16,
-        fontColor: shape.fontColor ?? '#000000',
-        borderColor: shape.borderColor ?? '#000000',
-        text: shape.text ?? '',
-        uri: shape.uri ?? null,
-        isVisible: shape.isVisible ?? true,
-        isLocked: shape.isLocked ?? false,
-      }));
+      const sanitizedShapes = parsedShapes.map((shape: any) => {
+        let newShape = {
+          ...shape,
+          position: shape.position ?? { x: 0, y: 0 },
+          style: {
+            width: shape.style?.width ?? 100,
+            height: shape.style?.height ?? 100,
+            backgroundColor: shape.style?.backgroundColor ?? '#ffffff',
+            borderRadius: shape.style?.borderRadius ?? 0,
+            color: shape.style?.color ?? '#000000',
+            fontSize: shape.style?.fontSize ?? 16,
+            fontWeight: shape.style?.fontWeight ?? 'normal',
+            fontStyle: shape.style?.fontStyle ?? 'normal',
+            textDecorationLine: shape.style?.textDecorationLine ?? 'none',
+            textAlign: shape.style?.textAlign ?? 'center',
+            borderColor: shape.style?.borderColor ?? '#000000',
+            borderWidth: shape.style?.borderWidth ?? 0,
+          },
+          color: shape.color ?? '#000000',
+          fontSize: shape.fontSize ?? 16,
+          fontColor: shape.fontColor ?? '#000000',
+          borderColor: shape.borderColor ?? '#000000',
+          text: shape.text ?? '',
+          uri: shape.uri ?? null,
+          isVisible: shape.isVisible ?? true,
+          isLocked: shape.isLocked ?? false,
+        };
+
+        // If shape has text and style.color exists, copy it to fontColor
+        if (newShape.text && newShape.style.color) {
+          newShape.fontColor = newShape.style.color;
+        }
+        // If fontColor is still undefined for text shapes, default to black
+        if (newShape.text && !newShape.fontColor) {
+          newShape.fontColor = '#000000';
+        }
+
+        return newShape;
+      });
 
       loadTemplate({
         ...template,

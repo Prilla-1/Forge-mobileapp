@@ -67,6 +67,7 @@ export default function LoginScreen() {
 
   setLoading(true);
   try {
+    // Real backend call
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -75,7 +76,6 @@ export default function LoginScreen() {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.log("Login failed:", response.status, errorText);
       setError(`Login failed: ${response.status} - ${errorText}`);
       setLoading(false);
       return;
@@ -86,6 +86,11 @@ export default function LoginScreen() {
     const username = data.name;
     const emailFromBackend = data.email || email;
 
+    // Mock successful login - commented out
+    // const username = email.split('@')[0]; // Use email prefix as username
+    // const token = 'mock-token-' + Date.now();
+    // const emailFromBackend = email;
+
     setUser({ username, email: emailFromBackend });
     await AsyncStorage.setItem('token', token);
     await AsyncStorage.setItem('username', username);
@@ -94,7 +99,7 @@ export default function LoginScreen() {
     router.replace('/(drawer)/(tabs)/mirror');
   } catch (err) {
     console.error('Login error:', err);
-    setError('Network error. Please try again.');
+    setError('An error occurred during login.');
   } finally {
     setLoading(false);
   }

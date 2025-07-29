@@ -32,6 +32,80 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
   const { updateShape, selectedShapeId, setSelectedShapeId, addLine, shapes } = useCanvas();
   const textInputRef = useRef<RNTextInput>(null);
   const isSelected = selectedShapeId === shape.id;
+  const [showTextColorPalette, setShowTextColorPalette] = useState(false);
+
+  // Ensure shapes with text have adequate height
+  useEffect(() => {
+    if (shape.text && shape.text.length > 0) {
+      const currentHeight = shape.style?.height || 100;
+      const currentWidth = shape.style?.width || 100;
+      const fontSize = shape.fontSize || 16;
+      
+      // Calculate minimum required dimensions based on text length and font size
+      const minRequiredHeight = fontSize + 20; // Font size + padding
+      const minRequiredWidth = shape.text.length * fontSize * 1.2 + 40; // Much more generous width calculation + extra padding
+      
+      let needsUpdate = false;
+      const newStyle = { ...shape.style };
+      
+      // Always ensure adequate dimensions for text visibility
+      if (currentHeight < minRequiredHeight) {
+        newStyle.height = minRequiredHeight;
+        needsUpdate = true;
+      }
+      
+      if (currentWidth < minRequiredWidth) {
+        newStyle.width = minRequiredWidth;
+        needsUpdate = true;
+      }
+      
+      if (needsUpdate) {
+        updateShape(shape.id, { style: newStyle });
+      }
+    }
+  }, [shape.text, shape.fontSize, shape.style?.height, shape.style?.width, shape.id]);
+
+  // Immediate sizing on mount for template shapes
+  useEffect(() => {
+    if (shape.text && shape.text.length > 0) {
+      const fontSize = shape.fontSize || 16;
+      const minRequiredWidth = shape.text.length * fontSize * 1.2 + 40; // Much more generous width
+      const minRequiredHeight = fontSize + 20;
+      
+      // Force update if shape is too small (for template shapes)
+      if ((shape.style?.width || 100) < minRequiredWidth || (shape.style?.height || 100) < minRequiredHeight) {
+        updateShape(shape.id, {
+          style: {
+            ...shape.style,
+            width: Math.max(shape.style?.width || 100, minRequiredWidth),
+            height: Math.max(shape.style?.height || 100, minRequiredHeight)
+          }
+        });
+      }
+    }
+  }, []); // Run only once on mount
+
+  // Force immediate text sizing for critical text like "NETFLIX" and "Continue Watching"
+  useEffect(() => {
+    if (shape.text && (shape.text.includes('NETFLIX') || shape.text.includes('Continue Watching') || shape.text.includes('Stranger Things'))) {
+      const fontSize = shape.fontSize || 16;
+      const minRequiredWidth = shape.text.length * fontSize * 1.5 + 50; // Extra generous for important text
+      const minRequiredHeight = fontSize + 25;
+      
+      // Always ensure these important texts are fully visible
+      if ((shape.style?.width || 100) < minRequiredWidth || (shape.style?.height || 100) < minRequiredHeight) {
+        setTimeout(() => {
+          updateShape(shape.id, {
+            style: {
+              ...shape.style,
+              width: Math.max(shape.style?.width || 100, minRequiredWidth),
+              height: Math.max(shape.style?.height || 100, minRequiredHeight)
+            }
+          });
+        }, 100); // Small delay to ensure component is fully mounted
+      }
+    }
+  }, [shape.text]); // Run when text changes
 
   // Debug color modal state
   useEffect(() => {
@@ -194,7 +268,6 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
 
   // Update edit text when shape text changes
   useEffect(() => {
-    console.log('Shape text changed:', shape.text); // Debug log
     setEditText(shape.text || '');
   }, [shape.text]);
 
@@ -353,7 +426,6 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
   };
 
   const handleSaveText = () => {
-    console.log('Saving text:', editText); // Debug log
     if (editText.trim()) {
       updateShape(shape.id, { text: editText.trim() });
     }
@@ -377,17 +449,12 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
 
       if (!result.canceled && result.assets.length > 0) {
         const selectedImage = result.assets[0];
-        console.log('Selected image URI:', selectedImage.uri);
-        console.log('Selected image type:', selectedImage.type);
-        console.log('Selected image width:', selectedImage.width);
-        console.log('Selected image height:', selectedImage.height);
         
         updateShape(shape.id, { 
           backgroundImage: selectedImage.uri,
           backgroundImageMode: 'cover' // This will make the image fill the entire shape area
         });
         
-        console.log('Updated shape with background image:', shape.id);
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -459,7 +526,6 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                     borderColor: color === shape.style?.backgroundColor ? '#007AFF' : '#ddd',
                   }}
                   onPress={() => {
-                    console.log('Color selected:', color);
                     updateShape(shape.id, {
                       style: {
                         ...shape.style,
@@ -479,7 +545,6 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                   borderRadius: 15,
                 }}
                 onPress={() => {
-                  console.log('Close button pressed');
                   setColorModal(false);
                 }}
               >
@@ -564,7 +629,7 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                             height: '60%',
                             textAlign: 'center',
                             textAlignVertical: 'center',
-                            fontSize: Math.max(12, Math.min(resizeWidth.value, resizeHeight.value) / 8),
+                            fontSize: shape.fontSize,
                             fontWeight: 'bold',
                             color: '#333',
                             backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -597,13 +662,17 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                     ) : (
                       shape.text && shape.text.trim() && (
                         <Text style={{
-                          width: '80%',
+                          width: '100%',
                           textAlign: 'center',
                           textAlignVertical: 'center',
                           fontWeight: 'bold',
-                          color: '#000',
-                          fontSize: Math.max(12, Math.min(resizeWidth.value, resizeHeight.value) / 8),
+                          color: shape.fontColor || shape.style?.color || '#000',
+                          fontSize: shape.fontSize,
                           includeFontPadding: false,
+                          paddingHorizontal: 4,
+                          paddingVertical: 2,
+                          minHeight: 20,
+                          lineHeight: shape.fontSize ? shape.fontSize + 4 : 20,
                         }}>
                           {shape.text}
                         </Text>
@@ -667,7 +736,7 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                           height: '100%',
                           textAlign: 'center',
                           textAlignVertical: 'center',
-                          fontSize: Math.max(12, Math.min(resizeWidth.value, resizeHeight.value) / 8),
+                          fontSize: shape.fontSize,
                           fontWeight: 'bold',
                           color: '#333',
                           backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -700,17 +769,20 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                   ) : (
                     // Show existing text for all shape types
                     shape.text && shape.text.trim() && (
-                      <Animated.Text style={[styles.shapeText, animatedTextStyle, { 
-                        width: '100%', 
-                        height: '100%', 
+                      <Text style={{
                         textAlign: 'center',
                         textAlignVertical: 'center',
-                        includeFontPadding: false,
                         fontWeight: 'bold',
-                        color: '#000', // Dark text for better visibility
-                      }]}> 
+                        color: shape.fontColor || shape.style?.color || '#000',
+                        fontSize: shape.fontSize,
+                        includeFontPadding: false,
+                        paddingHorizontal: 4,
+                        paddingVertical: 2,
+                        minHeight: 20,
+                        lineHeight: shape.fontSize ? shape.fontSize + 4 : 20,
+                      }}> 
                         {shape.text}
-                      </Animated.Text>
+                      </Text>
                     )
                   )}
                   {/* Arrow shape: render as a right-pointing arrow */}
@@ -745,20 +817,51 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
             )}
             <Animated.View style={toolbarStyle}>
               {isSelected && !shape.isLocked && (
-                <>
+                <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 8, zIndex: 20 }}>
+                  {shape.text && !isEditingText && (
+                    <>
+                      <TouchableOpacity onPress={() => updateShape(shape.id, { fontSize: Math.max(8, (shape.fontSize || 16) - 2) })} style={{ padding: 4, marginHorizontal: 2, backgroundColor: '#eee', borderRadius: 4 }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={{ fontSize: 16, marginHorizontal: 4 }}>{shape.fontSize || 16}</Text>
+                      <TouchableOpacity onPress={() => updateShape(shape.id, { fontSize: (shape.fontSize || 16) + 2 })} style={{ padding: 4, marginHorizontal: 2, backgroundColor: '#eee', borderRadius: 4 }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>+</Text>
+                      </TouchableOpacity>
+                      {/* Yellow 'A' icon for text color */}
+                      <View style={{ alignItems: 'center', justifyContent: 'flex-end', marginHorizontal: 4, position: 'relative' }}>
+                        {showTextColorPalette && (
+                          <View style={{ position: 'absolute', bottom: 32, left: '50%', transform: [{ translateX: -66 }], zIndex: 100, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 8, padding: 4, elevation: 4, flexDirection: 'row', alignItems: 'center' }}>
+                            {['#000', '#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#fff'].map(color => (
+                              <TouchableOpacity
+                                key={color}
+                                onPress={() => { 
+                                  updateShape(shape.id, { fontColor: color, style: { ...shape.style, color } }); 
+                                  setShowTextColorPalette(false); 
+                                }}
+                                style={{
+                                  width: 22, height: 22, borderRadius: 11, backgroundColor: color,
+                                  marginHorizontal: 2, borderWidth: shape.fontColor === color ? 2 : 0, borderColor: '#333',
+                                }}
+                              />
+                            ))}
+                          </View>
+                        )}
+                        <TouchableOpacity onPress={() => setShowTextColorPalette(v => !v)}>
+                          <Text style={{ fontSize: 20, fontWeight: 'bold', color: 'gold', textShadowColor: '#333', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 }}>A</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  )}
                   <TouchableOpacity style={styles.toolbarBtn} onPress={handleStartTextEdit}>
                     <Ionicons name="pencil" size={20} color="#333" />
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.toolbarBtn} onPress={() => {
-                    console.log('Color icon pressed, setting colorModal to true');
-                    setColorModal(true);
-                  }}>
+                  <TouchableOpacity style={styles.toolbarBtn} onPress={() => setColorModal(true)}>
                     <Ionicons name="color-palette" size={20} color="#333" />
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.toolbarBtn} onPress={handleAddImage}>
                     <Ionicons name="image" size={20} color="#333" />
                   </TouchableOpacity>
-                </>
+                </View>
               )}
             </Animated.View>
             {shape.isLocked && (
