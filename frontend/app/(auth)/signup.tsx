@@ -25,6 +25,8 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
+import { useUser } from '../../context/UserContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -36,6 +38,8 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const { setUser } = useUser();
 
   const [fontsLoaded] = useFonts({
     'JetBrainsMono-Medium': require('../../assets/fonts/fonts/ttf/JetBrainsMono-Medium.ttf'),
@@ -101,6 +105,10 @@ export default function SignupScreen() {
       console.log('Signup response:', data);
 
       if (response.ok) {
+        // Save user info to context and AsyncStorage
+        setUser({ username: name, email });
+        await AsyncStorage.setItem('username', name);
+        await AsyncStorage.setItem('email', email);
         Alert.alert('Success', 'Account created successfully.');
         router.replace('/(drawer)/(tabs)/mirror');
       } else {

@@ -83,14 +83,13 @@ export default function LoginScreen() {
 
     const data = await response.json();
     const token = data.token;
-    const username = data.name; 
+    const username = data.name;
+    const emailFromBackend = data.email || email;
 
-    // Save user info to context
-    setUser({ username });
-
-    // Save token to AsyncStorage
+    setUser({ username, email: emailFromBackend });
     await AsyncStorage.setItem('token', token);
     await AsyncStorage.setItem('username', username);
+    await AsyncStorage.setItem('email', emailFromBackend);
 
     router.replace('/(drawer)/(tabs)/mirror');
   } catch (err) {
