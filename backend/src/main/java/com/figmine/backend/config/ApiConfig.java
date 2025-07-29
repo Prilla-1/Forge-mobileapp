@@ -9,7 +9,6 @@ public class ApiConfig {
 
     private String deepaiToken;
     private String stableDiffusionUrl = "http://127.0.0.1:7860";
-    private String serverPort = "8081";
 
     public String getDeepaiToken() {
         return deepaiToken;
@@ -27,13 +26,6 @@ public class ApiConfig {
         this.stableDiffusionUrl = stableDiffusionUrl;
     }
 
-    public String getServerPort() {
-        return serverPort;
-    }
-
-    public void setServerPort(String serverPort) {
-        this.serverPort = serverPort;
-    }
 
     public String getStableDiffusionApiUrl() {
         return stableDiffusionUrl + "/sdapi/v1/txt2img";

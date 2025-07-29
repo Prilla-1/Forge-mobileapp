@@ -512,6 +512,7 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                   },
                   isSelected && !shape.isLocked && styles.selectedBorder
                 ]}>
+                  
                   {/* Background Image for kite */}
                   {shape.backgroundImage && (
                     <View style={{
