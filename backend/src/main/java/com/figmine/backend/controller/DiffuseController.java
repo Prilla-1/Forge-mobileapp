@@ -17,13 +17,16 @@ public class DiffuseController {
     @PostMapping("/generate")
     public ResponseEntity<?> generateImage(@RequestBody Map<String, String> body) {
         String prompt = body.get("prompt");
-        if (prompt == null || prompt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Prompt is required.");
+        String style = body.getOrDefault("style", "");
+
+        if (prompt == null || prompt.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Prompt is required."));
         }
 
         try {
-            String base64Image = imageGenerationService.generateImage(prompt);
-            return ResponseEntity.ok(Map.of("image", base64Image));
+           String imageUrl = imageGenerationService.generateImage(prompt, style);
+return ResponseEntity.ok(Map.of("image", imageUrl));
+
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }

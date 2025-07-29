@@ -37,12 +37,12 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return email -> userRepository.findByEmail(email)
-                .map(user -> org.springframework.security.core.userdetails.User
-                        .withUsername(user.getEmail())
-                        .password(user.getPassword())
-                        .authorities("USER")
-                        .build())
-                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+            .map(user -> org.springframework.security.core.userdetails.User
+                .withUsername(user.getEmail())
+                .password(user.getPassword())
+                .authorities("USER")
+                .build())
+            .orElseThrow(() -> new RuntimeException("User not found: " + email));
     }
 
     @Bean
@@ -62,20 +62,23 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
+                // Allow unauthenticated access to these endpoints
                 .requestMatchers(
                     "/api/auth/**",
                     "/api/templates/**",
                     "/api/diffuse/**",
                     "/api/ai/**",
                     "/api/health/**",
+                    "/api/image/generate", // Allow access to DeepSeek image generation
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
                     "/error"
                 ).permitAll()
+
+                // CORS preflight
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                // Protected endpoints
-                .requestMatchers("/api/users/me", "/api/users/me/**").authenticated()
+
+                // Everything else requires authentication
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
@@ -87,14 +90,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-
         config.setAllowedOriginPatterns(List.of(
             "http://localhost:[*]",
             "http://192.168.[*]",
             "http://10.[*]",
             "exp://[*]"
         ));
-
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

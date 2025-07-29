@@ -1,75 +1,52 @@
 package com.figmine.backend.controller;
 
-import com.figmine.backend.config.ApiConfig;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 
 @RestController
 @RequestMapping("/api/ai")
-@CrossOrigin(origins = "*")
 public class AiController {
 
     private final RestTemplate restTemplate = new RestTemplate();
-    
-    @Autowired
-    private ApiConfig apiConfig;
 
     @PostMapping("/generate")
-    public ResponseEntity<Map<String, String>> generateImage(@RequestBody Map<String, String> requestBody) {
-        String prompt = requestBody.get("prompt");
+    public ResponseEntity<?> generateImage(@RequestBody Map<String, String> request) {
+        String prompt = request.get("prompt");
+        String style = request.get("style");
 
         if (prompt == null || prompt.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Prompt is required."));
+            return ResponseEntity.badRequest().body(Map.of("error", "Prompt is required"));
         }
 
-        // Construct payload for Stable Diffusion API
-        Map<String, Object> sdPayload = new HashMap<>();
-        sdPayload.put("prompt", prompt);
-        sdPayload.put("steps", 25);
-        sdPayload.put("cfg_scale", 7);
-        sdPayload.put("sampler_index", "Euler");
-        sdPayload.put("width", 512);
-        sdPayload.put("height", 512);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(sdPayload, headers);
+        // Append style to the prompt
+        if (style != null && !style.trim().isEmpty()) {
+            prompt += " in " + style + " style";
+        }
 
         try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(apiConfig.getStableDiffusionApiUrl(), httpEntity, Map.class);
+            // Call DeepSeek backend directly
+            String deepseekEndpoint = "http://localhost:8081/api/deepseek/generate"; // Adjust if different
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                Object imagesObject = response.getBody().get("images");
+            Map<String, String> payload = Map.of("prompt", prompt);
+            HttpEntity<Map<String, String>> entity = new HttpEntity<>(payload, headers);
 
-                if (imagesObject instanceof List<?> images && !images.isEmpty()) {
-                    Object firstImage = images.get(0);
-                    if (firstImage instanceof String base64Image) {
-                        return ResponseEntity.ok(Map.of("image", base64Image));
-                    }
-                }
+            ResponseEntity<Map> response = restTemplate.postForEntity(deepseekEndpoint, entity, Map.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return ResponseEntity.ok(response.getBody());
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                        .body(Map.of("error", "Failed to generate image with DeepSeek"));
             }
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "No valid image found in AI response."));
 
         } catch (Exception e) {
-            // Log the error and return a detailed response
-            e.printStackTrace();
-            String errorMessage = "Image generation failed: " + e.getMessage();
-            
-            // Check if it's a connection error to Stable Diffusion
-            if (e.getMessage().contains("Connection refused") || e.getMessage().contains("ConnectException")) {
-                errorMessage = "Cannot connect to Stable Diffusion. Please ensure it's running on http://127.0.0.1:7860";
-            }
-            
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", errorMessage));
+                    .body(Map.of("error", "Exception: " + e.getMessage()));
         }
     }
 }

@@ -2,60 +2,70 @@ package com.figmine.backend.service;
 
 import com.figmine.backend.config.ApiConfig;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.*;
 
-import java.util.Map;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Base64;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 
 @Service
 public class ImageGenerationService {
 
     private final RestTemplate restTemplate = new RestTemplate();
-    
+
+    private final ApiConfig apiConfig;
+
     @Autowired
-    private ApiConfig apiConfig;
+    public ImageGenerationService(ApiConfig apiConfig) {
+        this.apiConfig = apiConfig;
+    }
 
-    public String generateImage(String prompt) {
-        String stableDiffusionUrl = apiConfig.getStableDiffusionApiUrl();
+    public String generateImage(String prompt, String style) {
+        if (prompt == null || prompt.isBlank()) {
+            throw new IllegalArgumentException("Prompt must not be empty.");
+        }
 
-        // Prepare request body with complete Stable Diffusion parameters
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("prompt", prompt);
-        requestBody.put("steps", 25);
-        requestBody.put("cfg_scale", 7);
-        requestBody.put("sampler_index", "Euler");
-        requestBody.put("width", 512);
-        requestBody.put("height", 512);
+        String styledPrompt = (style != null && !style.equalsIgnoreCase("None"))
+                ? prompt + ", in the style of " + style
+                : prompt;
 
-        // Prepare headers
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.set("api-key", apiConfig.getDeepaiToken());
 
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("text", styledPrompt);
 
-        try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(stableDiffusionUrl, entity, Map.class);
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
 
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Object imagesObject = response.getBody().get("images");
-                
-                if (imagesObject instanceof List<?> images && !images.isEmpty()) {
-                    Object firstImage = images.get(0);
-                    if (firstImage instanceof String base64Image) {
-                        return base64Image; // Return the actual base64 image
-                    }
-                }
-                
-                throw new RuntimeException("No valid image found in Stable Diffusion response");
-            } else {
-                throw new RuntimeException("Stable Diffusion API returned error: " + response.getStatusCode());
-            }
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                "https://api.deepai.org/api/text2img",
+                requestEntity,
+                Map.class
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new RuntimeException("DeepAI API error: " + response.getStatusCode());
+        }
+
+        Object outputUrl = response.getBody().get("output_url");
+        if (!(outputUrl instanceof String)) {
+            throw new RuntimeException("Invalid response from DeepAI: 'output_url' is missing or invalid");
+        }
+
+        return fetchImageAsBase64((String) outputUrl);
+    }
+
+    private String fetchImageAsBase64(String imageUrl) {
+        try (InputStream in = new URL(imageUrl).openStream()) {
+            byte[] imageBytes = in.readAllBytes();
+            return Base64.getEncoder().encodeToString(imageBytes);
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error during image generation: " + e.getMessage());
+            throw new RuntimeException("Failed to fetch or encode image from URL: " + imageUrl, e);
         }
     }
 }
