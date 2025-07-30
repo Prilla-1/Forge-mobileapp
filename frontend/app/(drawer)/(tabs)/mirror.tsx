@@ -248,7 +248,19 @@ export default function MirrorScreen() {
                 );
               })()
             )}
-            {text && <Text style={[textStyle, { zIndex: 3 }]}>{text}</Text>}
+            {text && <Text style={{
+              position: 'absolute',
+              width: '100%',
+              textAlign: 'center',
+              textAlignVertical: 'center',
+              fontWeight: 'bold',
+              color: shape.fontColor || style?.color || '#000',
+              fontSize: shape.fontSize || style?.fontSize || 16,
+              includeFontPadding: false,
+              paddingHorizontal: 4,
+              paddingVertical: 2,
+              zIndex: 3,
+            }}>{text}</Text>}
           </View>
         );
       }
@@ -305,13 +317,16 @@ export default function MirrorScreen() {
             {text && text.trim() && (
               <Text style={{
                 position: 'absolute',
-                width: '80%',
+                width: '100%',
                 textAlign: 'center',
                 textAlignVertical: 'center',
                 fontWeight: 'bold',
-                color: '#000',
-                fontSize: Math.max(12, ((style?.width || 100) * scale) / 8),
+                color: shape.fontColor || style?.color || '#000',
+                fontSize: shape.fontSize || style?.fontSize || 16,
                 includeFontPadding: false,
+                paddingHorizontal: 4,
+                paddingVertical: 2,
+                zIndex: 3,
               }}>
                 {text}
               </Text>
@@ -322,9 +337,13 @@ export default function MirrorScreen() {
       case 'text': {
         const textPositionStyle: TextStyle = {
           ...basePosition,
-          fontSize: (style?.fontSize || 16) * scale,
+          fontSize: shape.fontSize || style?.fontSize || 16,
           color: shape.fontColor || style?.color || '#000',
           textAlign: 'center',
+          fontWeight: 'bold',
+          includeFontPadding: false,
+          paddingHorizontal: 4,
+          paddingVertical: 2,
         };
 
         return (
@@ -420,8 +439,8 @@ export default function MirrorScreen() {
         };
 
         const textStyle: TextStyle = {
-          fontSize: (style?.fontSize || 16) * scale,
-          color: style?.color || '#000',
+          fontSize: shape.fontSize || style?.fontSize || 16,
+          color: shape.fontColor || style?.color || '#000',
           textAlign: 'center',
         };
 

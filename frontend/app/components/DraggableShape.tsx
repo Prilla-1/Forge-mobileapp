@@ -43,12 +43,12 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
       
       // Calculate minimum required dimensions based on text length and font size
       const minRequiredHeight = fontSize + 20; // Font size + padding
-      const minRequiredWidth = shape.text.length * fontSize * 0.6 + 20; // Text length * font size * 0.6 + padding
+      const minRequiredWidth = shape.text.length * fontSize * 1.2 + 40; // Much more generous width calculation + extra padding
       
       let needsUpdate = false;
       const newStyle = { ...shape.style };
       
-      // Only update if dimensions are too small
+      // Always ensure adequate dimensions for text visibility
       if (currentHeight < minRequiredHeight) {
         newStyle.height = minRequiredHeight;
         needsUpdate = true;
@@ -63,7 +63,49 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
         updateShape(shape.id, { style: newStyle });
       }
     }
-  }, [shape.text, shape.fontSize, shape.style?.height, shape.style?.width]);
+  }, [shape.text, shape.fontSize, shape.style?.height, shape.style?.width, shape.id]);
+
+  // Immediate sizing on mount for template shapes
+  useEffect(() => {
+    if (shape.text && shape.text.length > 0) {
+      const fontSize = shape.fontSize || 16;
+      const minRequiredWidth = shape.text.length * fontSize * 1.2 + 40; // Much more generous width
+      const minRequiredHeight = fontSize + 20;
+      
+      // Force update if shape is too small (for template shapes)
+      if ((shape.style?.width || 100) < minRequiredWidth || (shape.style?.height || 100) < minRequiredHeight) {
+        updateShape(shape.id, {
+          style: {
+            ...shape.style,
+            width: Math.max(shape.style?.width || 100, minRequiredWidth),
+            height: Math.max(shape.style?.height || 100, minRequiredHeight)
+          }
+        });
+      }
+    }
+  }, []); // Run only once on mount
+
+  // Force immediate text sizing for critical text like "NETFLIX" and "Continue Watching"
+  useEffect(() => {
+    if (shape.text && (shape.text.includes('NETFLIX') || shape.text.includes('Continue Watching') || shape.text.includes('Stranger Things'))) {
+      const fontSize = shape.fontSize || 16;
+      const minRequiredWidth = shape.text.length * fontSize * 1.5 + 50; // Extra generous for important text
+      const minRequiredHeight = fontSize + 25;
+      
+      // Always ensure these important texts are fully visible
+      if ((shape.style?.width || 100) < minRequiredWidth || (shape.style?.height || 100) < minRequiredHeight) {
+        setTimeout(() => {
+          updateShape(shape.id, {
+            style: {
+              ...shape.style,
+              width: Math.max(shape.style?.width || 100, minRequiredWidth),
+              height: Math.max(shape.style?.height || 100, minRequiredHeight)
+            }
+          });
+        }, 100); // Small delay to ensure component is fully mounted
+      }
+    }
+  }, [shape.text]); // Run when text changes
 
   // Debug color modal state
   useEffect(() => {
