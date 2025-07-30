@@ -66,6 +66,14 @@ setSelectedShapeIds: Dispatch<SetStateAction<string[]>>;
 
 const CanvasContext = createContext<CanvasContextType | undefined>(undefined);
 
+const addFontSizeAndFontColorToShapes = (shapes: ShapeType[]) =>
+  shapes.map(shape => {
+    let newShape = { ...shape };
+    if (shape.text && shape.fontSize === undefined) newShape.fontSize = 18;
+    if (shape.text && shape.fontColor === undefined) newShape.fontColor = '#000';
+    return newShape;
+  });
+
 const initialTemplates: Template[] = [
   { // Template 1: E-commerce Flow - V3
      id: 'template1',
@@ -584,6 +592,10 @@ const initialTemplates: Template[] = [
 }
 ];
 
+initialTemplates.forEach(template => {
+  template.shapes = addFontSizeAndFontColorToShapes(template.shapes);
+});
+
 
 export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [connectStartShapeId, setConnectStartShapeId] = useState<string | null>(null);
@@ -639,8 +651,10 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             updatedShape.style = { ...s.style, ...newProps.style };
           }
 
-          // Merge other properties like text, uri, etc.
+          // Merge other properties like text, fontSize, uri, etc.
           if (newProps.text !== undefined) updatedShape.text = newProps.text;
+          if (newProps.fontSize !== undefined) updatedShape.fontSize = newProps.fontSize;
+          if (newProps.fontColor !== undefined) updatedShape.fontColor = newProps.fontColor;
           if (newProps.uri !== undefined) updatedShape.uri = newProps.uri;
           if (newProps.isLocked !== undefined) updatedShape.isLocked = newProps.isLocked;
           if (newProps.backgroundImage !== undefined) updatedShape.backgroundImage = newProps.backgroundImage;
@@ -776,22 +790,31 @@ export const CanvasProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const loadTemplate = (template: Template) => {
-    const clonedShapes = template.shapes.map((shape:any) => ({
-      ...shape,
-      id: generateUUID(),
-    }));
-    const idMap = template.shapes.reduce((acc:any, shape:any, i:any) => {
-      (acc as any)[shape.id] = clonedShapes[i].id;
+    const clonedShapes = template.shapes.map((shape: any) => {
+      let newShape = { ...shape, id: generateUUID() };
+      if (newShape.text) {
+        // If style.color exists, copy it to fontColor
+        if (newShape.style && newShape.style.color) {
+          newShape.fontColor = newShape.style.color;
+        }
+        // If fontColor is still undefined, default to black
+        if (!newShape.fontColor) {
+          newShape.fontColor = '#000';
+        }
+      }
+      return newShape;
+    });
+    const idMap = template.shapes.reduce((acc: any, shape: any, i: any) => {
+      acc[shape.id] = clonedShapes[i].id;
       return acc;
     }, {} as Record<string, string>);
 
-   const clonedLines = template.lines.map((line: LineType) => ({
-  ...line,
-  id: generateUUID(),
-  startShapeId: idMap[line.startShapeId],
-  endShapeId: idMap[line.endShapeId],
-}));
-
+    const clonedLines = template.lines.map((line: LineType) => ({
+      ...line,
+      id: generateUUID(),
+      startShapeId: idMap[line.startShapeId],
+      endShapeId: idMap[line.endShapeId],
+    }));
 
     setShapes(clonedShapes);
     setLines(clonedLines);
