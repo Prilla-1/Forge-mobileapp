@@ -5,12 +5,14 @@ import {
 import { useCanvas } from '../context/CanvasContext';
 import { useRouter } from 'expo-router';
 import { generateUUID } from '../utils/generateUUID';
+import ConfettiCannon from 'react-native-confetti-cannon'
 
 const stylesList = ['None', 'Van Gogh', 'Cyberpunk', 'Anime', 'Watercolor'];
 
 const PromptScreen = () => {
   const [prompt, setPrompt] = useState('');
   const [style, setStyle] = useState('None');
+  const [showConfetti, setShowConfetti] = useState(false);
   const [imageUri, setImageUri] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
@@ -97,8 +99,13 @@ const PromptScreen = () => {
 // };
 
 const generateImage = () => {
-  Alert.alert('Coming Soon!', 'Exciting feature coming soon.');
+  setShowConfetti(true);
+  setTimeout(() => {
+    setShowConfetti(false);
+    Alert.alert('Coming Soon!', 'Exciting feature coming soon🎉🎉.');
+  }, 1500); // Show confetti for 1.5 seconds
 };
+
 
 
 
@@ -108,17 +115,27 @@ const generateImage = () => {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        {showConfetti && (
+  <ConfettiCannon
+    count={80}
+    origin={{ x: 200, y: 0 }}
+    fadeOut
+    explosionSpeed={350}
+    fallSpeed={2500}
+  />
+)}
+
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.headerContainer}>
             <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
               AI Image Generator
             </Text>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.canvasButton}
               onPress={() => router.push('/(drawer)/(tabs)/CanvasScreen')}
             >
               <Text style={styles.canvasButtonText}>Canvas</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           <TextInput

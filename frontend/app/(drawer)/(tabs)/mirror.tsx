@@ -99,36 +99,27 @@ export default function MirrorScreen() {
       maxY = Math.max(maxY, y + height);
     });
 
-    // Use the device frame size for available space
-    const availableWidth = 340;
-    const availableHeight = 700;
+   // Use the full screen minus margins
+const availableWidth = screenWidth - 32; // margins
+const availableHeight = screenHeight - footerHeight- 32; // leave space for footer/buttons
 
-    // Add some padding around the flowchart
-    const padding = 20;
-    minX -= padding;
-    minY -= padding;
-    maxX += padding;
-    maxY += padding;
+const flowWidth = maxX - minX;
+const flowHeight = maxY - minY;
 
-    const flowWidth = maxX - minX;
-    const flowHeight = maxY - minY;
-    
-    const scaleX = availableWidth / flowWidth;
-    const scaleY = availableHeight / flowHeight;
-    
-    const MIN_SCALE = 0.5;
-    const computedScale = Math.max(Math.min(scaleX, scaleY), MIN_SCALE);
+const scaleX = availableWidth / flowWidth;
+const scaleY = availableHeight / flowHeight;
 
-    // Center the flowchart in the frame
-    const offsetX = (availableWidth - flowWidth * computedScale) / 2 - minX * computedScale;
-    const offsetY = (availableHeight - flowHeight * computedScale) / 2 - minY * computedScale;
+const computedScale = Math.min(scaleX, scaleY, 1);
 
-    setAutoFit({ scale: computedScale, offset: { x: offsetX, y: offsetY } });
-    if (manualScale === null) {
-      setScale(computedScale);
-      setOffset({ x: offsetX, y: offsetY });
-    }
-  }, [shapes, manualScale, fitToScreenRequested]);
+const offsetX = (availableWidth - flowWidth * computedScale) / 2 - minX * computedScale;
+const offsetY = (availableHeight - flowHeight * computedScale) / 2 - minY * computedScale;
+
+setAutoFit({ scale: computedScale, offset: { x: offsetX, y: offsetY } });
+if (manualScale === null) {
+  setScale(computedScale);
+  setOffset({ x: offsetX, y: offsetY });
+}
+ }, [shapes, manualScale, fitToScreenRequested]);
 
   // When manualScale changes, update scale and offset
   useEffect(() => {
