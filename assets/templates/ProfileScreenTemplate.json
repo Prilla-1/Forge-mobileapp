@@ -1,0 +1,108 @@
+{
+  "screen": "Profile",
+  "layout": [
+    {
+      "type": "card",
+      "style": {
+        "padding": 20,
+        "margin": 16,
+        "borderRadius": 16,
+        "backgroundColor": "#ffffff",
+        "shadowColor": "#000",
+        "shadowOpacity": 0.1,
+        "shadowRadius": 10
+      },
+      "children": [
+        {
+          "type": "image",
+          "key": "avatar",
+          "style": {
+            "width": 100,
+            "height": 100,
+            "borderRadius": 50,
+            "alignSelf": "center"
+          }
+        },
+        {
+          "type": "text",
+          "key": "username",
+          "style": {
+            "fontSize": 24,
+            "fontWeight": "bold",
+            "textAlign": "center",
+            "marginTop": 12
+          }
+        },
+        {
+          "type": "text",
+          "key": "bio",
+          "style": {
+            "fontSize": 16,
+            "textAlign": "center",
+            "color": "#777",
+            "marginTop": 6
+          }
+        },
+        {
+          "type": "button",
+          "key": "editProfile",
+          "label": "Edit Profile",
+          "icon": "edit",
+          "style": {
+            "marginTop": 16,
+            "backgroundColor": "#4CAF50",
+            "padding": 12,
+            "borderRadius": 10,
+            "color": "#fff",
+            "alignSelf": "center"
+          }
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "title": "Your Stats",
+      "style": {
+        "marginHorizontal": 16,
+        "marginTop": 10
+      },
+      "children": [
+        {
+          "type": "stat",
+          "key": "projects",
+          "label": "Projects",
+          "value": "12"
+        },
+        {
+          "type": "stat",
+          "key": "followers",
+          "label": "Followers",
+          "value": "289"
+        },
+        {
+          "type": "stat",
+          "key": "following",
+          "label": "Following",
+          "value": "75"
+        }
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "button",
+      "key": "logout",
+      "label": "Log Out",
+      "icon": "log-out-outline",
+      "style": {
+        "marginTop": 30,
+        "padding": 12,
+        "backgroundColor": "#f44336",
+        "color": "#fff",
+        "borderRadius": 10,
+        "alignSelf": "center"
+      }
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "forge",
+    "slug": "forge",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/FORGE-logo.png",
+    "scheme": "forge",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/FORGE-logo.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/FORGE-logo.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/FORGE-logo.png",
+          "imageWidth": 500,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      "expo-font",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "fonts": {
+    "JetBrainsMono-Regular": "./assets/fonts/JetBrainsMono-Regular.ttf",
+    "JetBrainsMono-Medium": "./assets/fonts/JetBrainsMono-Medium.ttf"
+  },
+
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5b615891-f628-454d-bbe2-4510f237d24d"
+      }
+    },
+    "owner": "carrongeorge"
+  }
+}
