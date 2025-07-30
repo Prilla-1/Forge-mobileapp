@@ -159,4 +159,36 @@ public class TemplateServiceImpl implements TemplateService {
         }
         return templateOpt;
     }
+
+    @Override
+    public void updateTemplate(String id, TemplateDto dto) {
+        try {
+            System.out.println("Updating template: " + id);
+            System.out.println("New shapes: " + dto.getShapes());
+            System.out.println("New lines: " + dto.getLines());
+
+            Optional<Template> existingTemplateOpt = templateRepository.findById(id);
+            if (existingTemplateOpt.isPresent()) {
+                Template existingTemplate = existingTemplateOpt.get();
+                existingTemplate.setName(dto.getName());
+                existingTemplate.setImageUrl(dto.getImageUrl());
+
+                String shapesJson = objectMapper.writeValueAsString(dto.getShapes());
+                String linesJson = objectMapper.writeValueAsString(dto.getLines());
+
+                System.out.println("Updated shapesJson = " + shapesJson);
+                System.out.println("Updated linesJson = " + linesJson);
+
+                existingTemplate.setShapes(shapesJson);
+                existingTemplate.setLines(linesJson);
+
+                templateRepository.save(existingTemplate);
+            } else {
+                throw new RuntimeException("Template with id " + id + " not found");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to update template", e);
+        }
+    }
 }

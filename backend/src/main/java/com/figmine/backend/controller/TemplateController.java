@@ -79,4 +79,18 @@ public class TemplateController {
             return ResponseEntity.status(500).body("Image upload failed");
         }
     }
+
+    // ✅ Update existing template
+    @PutMapping("/update/{id}")
+    public ResponseEntity<String> updateTemplate(@PathVariable String id, @RequestBody TemplateDto templateDto) {
+        try {
+            templateService.updateTemplate(id, templateDto);
+            return ResponseEntity.ok("Template updated successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            String rootCause = e.getCause() != null ? e.getCause().toString() : e.toString();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to update template: " + rootCause);
+        }
+    }
 }

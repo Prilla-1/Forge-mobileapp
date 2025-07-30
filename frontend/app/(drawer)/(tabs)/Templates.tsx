@@ -54,22 +54,30 @@ export default function TemplateScreen() {
         typeof template.lines === 'string' ? JSON.parse(template.lines) : template.lines;
 
       const sanitizedShapes = parsedShapes.map((shape: any) => {
+        // Handle different position formats
+        let position = { x: 0, y: 0 };
+        if (shape.position) {
+          position = shape.position;
+        } else if (shape.x !== undefined && shape.y !== undefined) {
+          position = { x: shape.x, y: shape.y };
+        }
+
         let newShape = {
           ...shape,
-          position: shape.position ?? { x: 0, y: 0 },
+          position: position,
           style: {
-            width: shape.style?.width ?? 100,
-            height: shape.style?.height ?? 100,
-            backgroundColor: shape.style?.backgroundColor ?? '#ffffff',
-            borderRadius: shape.style?.borderRadius ?? 0,
-            color: shape.style?.color ?? '#000000',
-            fontSize: shape.style?.fontSize ?? 16,
-            fontWeight: shape.style?.fontWeight ?? 'normal',
-            fontStyle: shape.style?.fontStyle ?? 'normal',
-            textDecorationLine: shape.style?.textDecorationLine ?? 'none',
-            textAlign: shape.style?.textAlign ?? 'center',
-            borderColor: shape.style?.borderColor ?? '#000000',
-            borderWidth: shape.style?.borderWidth ?? 0,
+            width: shape.style?.width ?? shape.width ?? 100,
+            height: shape.style?.height ?? shape.height ?? 100,
+            backgroundColor: shape.style?.backgroundColor ?? shape.backgroundColor ?? '#ffffff',
+            borderRadius: shape.style?.borderRadius ?? shape.borderRadius ?? 0,
+            color: shape.style?.color ?? shape.color ?? '#000000',
+            fontSize: shape.style?.fontSize ?? shape.fontSize ?? 16,
+            fontWeight: shape.style?.fontWeight ?? shape.fontWeight ?? 'normal',
+            fontStyle: shape.style?.fontStyle ?? shape.fontStyle ?? 'normal',
+            textDecorationLine: shape.style?.textDecorationLine ?? shape.textDecorationLine ?? 'none',
+            textAlign: shape.style?.textAlign ?? shape.textAlign ?? 'center',
+            borderColor: shape.style?.borderColor ?? shape.borderColor ?? '#000000',
+            borderWidth: shape.style?.borderWidth ?? shape.borderWidth ?? 0,
           },
           color: shape.color ?? '#000000',
           fontSize: shape.fontSize ?? 16,

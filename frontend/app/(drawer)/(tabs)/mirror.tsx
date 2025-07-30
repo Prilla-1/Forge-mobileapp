@@ -12,7 +12,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useSharedValue, useAnimatedGestureHandler, useAnimatedStyle } from 'react-native-reanimated';
 
 export default function MirrorScreen() {
-  const { shapes, lines } = useCanvas();
+  const { shapes, lines, scale: canvasScale } = useCanvas();
   const router = useRouter();
   const params = useLocalSearchParams();
   const canvasRef = useRef<View>(null);
@@ -83,50 +83,65 @@ export default function MirrorScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-fit effect: recalculate when shapes, canvasWidth, canvasHeight, manualScale, or fitToScreenRequested changes
+  // Auto-fit to device frame (340x700)
   useEffect(() => {
     if (shapes.length === 0) return;
 
+    // Calculate bounds of all shapes
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-    shapes.forEach(({ position, style }) => {
-      const { x, y } = position;
-      const width = style?.width || 0;
-      const height = style?.height || 0;
+    
+    shapes.forEach((shape: any) => {
+      const { x, y } = shape.position;
+      const width = shape.style?.width || 100;
+      const height = shape.style?.height || 100;
       minX = Math.min(minX, x);
       minY = Math.min(minY, y);
       maxX = Math.max(maxX, x + width);
       maxY = Math.max(maxY, y + height);
     });
 
-    // Use the device frame size for available space
-    const availableWidth = 340;
-    const availableHeight = 700;
-
-    // Add some padding around the flowchart
-    const padding = 20;
-    minX -= padding;
-    minY -= padding;
-    maxX += padding;
-    maxY += padding;
-
-    const flowWidth = maxX - minX;
-    const flowHeight = maxY - minY;
+    // Device frame dimensions
+    const frameWidth = 340;
+    const frameHeight = 700;
+    const padding = 20; // Reduced padding to use more space
     
-    const scaleX = availableWidth / flowWidth;
-    const scaleY = availableHeight / flowHeight;
+    // Available space for content
+    const availableWidth = frameWidth - (padding * 2);
+    const availableHeight = frameHeight - (padding * 2);
     
-    const MIN_SCALE = 0.5;
-    const computedScale = Math.max(Math.min(scaleX, scaleY), MIN_SCALE);
-
-    // Center the flowchart in the frame
-    const offsetX = (availableWidth - flowWidth * computedScale) / 2 - minX * computedScale;
-    const offsetY = (availableHeight - flowHeight * computedScale) / 2 - minY * computedScale;
-
-    setAutoFit({ scale: computedScale, offset: { x: offsetX, y: offsetY } });
+    // Content dimensions
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
+    
+    // Calculate scale to fit content in available space - more aggressive scaling
+    const scaleX = availableWidth / contentWidth;
+    const scaleY = availableHeight / contentHeight;
+    let computedScale = Math.min(scaleX, scaleY);
+    
+    // Ensure minimum scale for better visibility
+    if (computedScale < 0.8) {
+      computedScale = 0.8;
+    }
+    
+    // Cap maximum scale but allow larger scaling
+    if (computedScale > 3.0) {
+      computedScale = 3.0;
+    }
+    
+    // Calculate offset to center content perfectly
+    const scaledContentWidth = contentWidth * computedScale;
+    const scaledContentHeight = contentHeight * computedScale;
+    const offsetX = (frameWidth - scaledContentWidth) / 2 - (minX * computedScale);
+    const offsetY = (frameHeight - scaledContentHeight) / 2 - (minY * computedScale);
+    
+    // Ensure content doesn't go outside frame bounds
+    const finalOffsetX = Math.max(padding, Math.min(offsetX, frameWidth - scaledContentWidth - padding));
+    const finalOffsetY = Math.max(padding, Math.min(offsetY, frameHeight - scaledContentHeight - padding));
+    
+    setAutoFit({ scale: computedScale, offset: { x: finalOffsetX, y: finalOffsetY } });
     if (manualScale === null) {
       setScale(computedScale);
-      setOffset({ x: offsetX, y: offsetY });
+      setOffset({ x: finalOffsetX, y: finalOffsetY });
     }
   }, [shapes, manualScale, fitToScreenRequested]);
 
@@ -150,6 +165,8 @@ export default function MirrorScreen() {
   };
   const handleResetZoom = () => {
     setManualScale(null);
+    // Reset to canvas scale
+    setScale(canvasScale || 1);
     setFitToScreenRequested(f => f + 1);
   };
 
@@ -579,16 +596,17 @@ export default function MirrorScreen() {
           ref={canvasRef}
           collapsable={false}
           style={styles.canvas}
-            onLayout={() => {
-              setCanvasWidth(340);
-              setCanvasHeight(700);
+            onLayout={(e) => {
+              const { width, height } = e.nativeEvent.layout;
+              setCanvasWidth(width);
+              setCanvasHeight(height);
           }}
         >
           {renderLines()}
           {shapes.map(shape => renderShape(shape))}
         </View>
         </View>
-        {/* Unified Vertical Toolbar: AI Button + Fit to Screen */}
+        {/* Unified Vertical Toolbar: AI Button Only */}
         <View style={styles.toolbarColumn}>
           <TouchableOpacity
             style={styles.aiButton}
@@ -596,13 +614,15 @@ export default function MirrorScreen() {
           >
             <Ionicons name="sparkles" size={28} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.fitButton}
-            onPress={handleResetZoom}
-          >
-            <Ionicons name="expand" size={32} color="#6200ee" />
-          </TouchableOpacity>
         </View>
+        
+        {/* Single Fit to Screen Button */}
+        <TouchableOpacity
+          style={styles.fitToScreenButton}
+          onPress={handleResetZoom}
+        >
+          <Ionicons name="expand" size={24} color="#fff" />
+        </TouchableOpacity>
       </View>
       <View style={styles.footer} onLayout={e => setFooterHeight(e.nativeEvent.layout.height)}>
         <TouchableOpacity onPress={exportToPng} style={styles.exportButton}>
@@ -753,29 +773,37 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  fitButton: {
-    marginTop: 12,
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 6,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-  },
-  deviceFrame: {
-    width: 340,
-    height: 700,
-    backgroundColor: '#fff',
-    borderRadius: 40,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-    borderWidth: 3,
-    borderColor: '#bbb',
-    marginVertical: 24,
-    overflow: 'hidden',
-  },
+  
+     deviceFrame: {
+     width: 340,
+     height: 700,
+     backgroundColor: '#fff',
+     borderRadius: 40,
+     shadowColor: '#000',
+     shadowOpacity: 0.15,
+     shadowRadius: 24,
+     shadowOffset: { width: 0, height: 8 },
+     borderWidth: 3,
+     borderColor: '#bbb',
+     marginVertical: 24,
+     overflow: 'hidden',
+   },
+   fitToScreenButton: {
+     position: 'absolute',
+     top: 100,
+     right: 20,
+     backgroundColor: '#6200ee',
+     alignItems: 'center',
+     justifyContent: 'center',
+     paddingHorizontal: 12,
+     paddingVertical: 12,
+     borderRadius: 25,
+     elevation: 5,
+     shadowColor: '#000',
+     shadowOffset: { width: 0, height: 2 },
+     shadowOpacity: 0.3,
+     shadowRadius: 3,
+   },
+           
+  
 });

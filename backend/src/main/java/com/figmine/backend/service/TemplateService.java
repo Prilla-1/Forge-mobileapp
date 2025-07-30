@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface TemplateService {
     void saveTemplate(TemplateDto dto);
+    void updateTemplate(String id, TemplateDto dto);
     List<Template> getAllTemplates();
     Optional<Template> getTemplateById(String id);
     Optional<Template> getTemplateByName(String name);
