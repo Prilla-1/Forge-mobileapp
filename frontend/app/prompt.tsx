@@ -1,119 +1,106 @@
 import React, { useState } from 'react';
 import {
-  SafeAreaView,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-  StatusBar,
+  SafeAreaView,View,Text,TextInput,TouchableOpacity,Image,StyleSheet,ActivityIndicator,KeyboardAvoidingView,Platform,ScrollView,Alert,StatusBar,
 } from 'react-native';
 import { useCanvas } from '../context/CanvasContext';
 import { useRouter } from 'expo-router';
 import { generateUUID } from '../utils/generateUUID';
 
+const stylesList = ['None', 'Van Gogh', 'Cyberpunk', 'Anime', 'Watercolor'];
+
 const PromptScreen = () => {
   const [prompt, setPrompt] = useState('');
+  const [style, setStyle] = useState('None');
   const [imageUri, setImageUri] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
   const { addShape } = useCanvas();
   const router = useRouter();
 
-  const generateImage = async () => {
-    if (!prompt.trim()) {
-      Alert.alert('Missing Prompt', 'Please enter a prompt to generate an image.');
-      return;
-    }
+//  const realGenerateImage = async () => {
+//   if (!prompt.trim()) {
+//     Alert.alert('Missing Prompt', 'Please enter a prompt to generate an image.');
+//     return;
+//   }
 
-    setLoading(true);
-    setImageUri('');
-    setStatus('Checking Stable Diffusion...');
+//   setLoading(true);
+//   setImageUri('');
+//   setStatus('Generating image with DeepAI...');
 
-    try {
-      // Check if Stable Diffusion is running
-      const healthResponse = await fetch('http://10.212.110.165:8081/api/health/stable-diffusion');
-      if (!healthResponse.ok) {
-        setStatus('Stable Diffusion is not running. Please start it first.');
-        return;
-      }
+//   try {
+//     const response = await fetch('http://10.212.110.165:8081/api/image/generate', {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({ prompt }), // Only sending prompt; style ignored by DeepAI
+//     });
 
-      setStatus('Generating image...');
-      // Generate the image
-      const response = await fetch('http://10.212.110.165:8081/api/ai/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
+//     if (!response.ok) {
+//       throw new Error(`Server returned status ${response.status}`);
+//     }
 
-      if (!response.ok) {
-        throw new Error(`Server returned status ${response.status}`);
-      }
+//     const data = await response.json();
 
-      const data = await response.json();
+//     if (data.image) {
+//       const base64ImageUri = `data:image/png;base64,${data.image}`;
+//       setImageUri(base64ImageUri);
+//       setStatus('Image generated and added to canvas!');
 
-      if (data.image) {
-        const base64ImageUri = `data:image/png;base64,${data.image}`;
-        setImageUri(base64ImageUri);
-        setStatus('Image generated and added to canvas!');
-        
-        // Add the generated image to canvas
-        const newImageShape = {
-          id: generateUUID(),
-          type: 'image' as const,
-          uri: base64ImageUri,
-          position: { x: 100, y: 100 },
-          style: {
-            width: 200,
-            height: 200,
-            color: 'transparent',
-          },
-        };
-        
-        addShape(newImageShape);
-        
-        // Auto-navigate to canvas after a short delay
-        setTimeout(() => {
-          Alert.alert(
-            'Image Added to Canvas!',
-            'Your AI-generated image has been added to the canvas.',
-            [
-              { 
-                text: 'Go to Canvas', 
-                onPress: () => router.push('/(drawer)/(tabs)/CanvasScreen')
-              },
-              { text: 'Stay Here' }
-            ]
-          );
-        }, 1000);
-      } else {
-        Alert.alert('No Image', 'Server did not return an image.');
-        setStatus('');
-      }
-    } catch (error) {
-      console.error('Image generation error:', error);
-      let errorMessage = 'Could not generate image. Make sure your backend and diffusion server are running.';
-      
-      if (error instanceof Error) {
-        if (error.message.includes('Network request failed')) {
-          errorMessage = 'Cannot connect to backend server. Please check if the backend is running.';
-        } else if (error.message.includes('500')) {
-          errorMessage = 'Backend server error. Please check if Stable Diffusion is running.';
-        }
-      }
-      
-      Alert.alert('Generation Failed', errorMessage);
-      setStatus('');
-    } finally {
-      setLoading(false);
-    }
-  };
+//       const newImageShape = {
+//         id: generateUUID(),
+//         type: 'image' as const,
+//         uri: base64ImageUri,
+//         position: { x: 100, y: 100 },
+//         style: {
+//           width: 200,
+//           height: 200,
+//           color: 'transparent',
+//         },
+//       };
+
+//       addShape(newImageShape);
+
+//       setTimeout(() => {
+//         Alert.alert(
+//           'Image Added to Canvas!',
+//           'Your AI-generated image has been added to the canvas.',
+//           [
+//             {
+//               text: 'Go to Canvas',
+//               onPress: () => router.push('/(drawer)/(tabs)/CanvasScreen'),
+//             },
+//             { text: 'Stay Here' },
+//           ]
+//         );
+//       }, 1000);
+//     } else {
+//       Alert.alert('No Image', 'Server did not return an image.');
+//       setStatus('');
+//     }
+//   } catch (error) {
+//     console.error('Image generation error:', error);
+//     let errorMessage =
+//       'Could not generate image. Make sure your backend is running and reachable.';
+
+//     if (error instanceof Error) {
+//       if (error.message.includes('Network request failed')) {
+//         errorMessage = 'Cannot connect to backend server. Please check if the backend is running.';
+//       } else if (error.message.includes('500')) {
+//         errorMessage = 'Backend server error. Please check DeepAI key or server logs.';
+//       }
+//     }
+
+//     Alert.alert('Generation Failed', errorMessage);
+//     setStatus('');
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
+const generateImage = () => {
+  Alert.alert('Coming Soon!', 'Exciting feature coming soon.');
+};
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -122,15 +109,17 @@ const PromptScreen = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.content}>
-                     <View style={styles.headerContainer}>
-             <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">AI Image Generator</Text>
-             <TouchableOpacity
-               style={styles.canvasButton}
-               onPress={() => router.push('/(drawer)/(tabs)/CanvasScreen')}
-             >
-               <Text style={styles.canvasButtonText}>Canvas</Text>
-             </TouchableOpacity>
-           </View>
+          <View style={styles.headerContainer}>
+            <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+              AI Image Generator
+            </Text>
+            <TouchableOpacity
+              style={styles.canvasButton}
+              onPress={() => router.push('/(drawer)/(tabs)/CanvasScreen')}
+            >
+              <Text style={styles.canvasButtonText}>Canvas</Text>
+            </TouchableOpacity>
+          </View>
 
           <TextInput
             placeholder="Describe your image..."
@@ -140,6 +129,23 @@ const PromptScreen = () => {
             multiline
             editable={!loading}
           />
+
+          <View style={styles.styleWrap}>
+            {stylesList.map((sname) => (
+              <TouchableOpacity
+                key={sname}
+                onPress={() => setStyle(sname)}
+                style={[
+                  styles.styleButton,
+                  style === sname && styles.selectedStyleButton,
+                ]}
+              >
+                <Text style={style === sname ? styles.selectedStyleText : styles.styleText}>
+                  {sname}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
@@ -152,36 +158,30 @@ const PromptScreen = () => {
           </TouchableOpacity>
 
           {loading && <ActivityIndicator size="large" color="#7e22ce" style={{ marginTop: 20 }} />}
-          
-          {status && (
-            <Text style={styles.statusText}>{status}</Text>
-          )}
+
+          {status && <Text style={styles.statusText}>{status}</Text>}
 
           {imageUri !== '' && (
             <View style={styles.imageContainer}>
-              <Image
-                source={{ uri: imageUri }}
-                style={styles.image}
-                resizeMode="contain"
-              />
-                             <TouchableOpacity
-                 style={styles.saveButton}
-                 onPress={() => {
-                   Alert.alert(
-                     'Image Added to Canvas!',
-                     'Your AI-generated image has been added to the canvas. Navigate to the canvas to see it.',
-                     [
-                       { 
-                         text: 'Go to Canvas', 
-                         onPress: () => router.push('/(drawer)/(tabs)/CanvasScreen')
-                       },
-                       { text: 'Stay Here' }
-                     ]
-                   );
-                 }}
-               >
-                 <Text style={styles.saveButtonText}>Go to Canvas</Text>
-               </TouchableOpacity>
+              <Image source={{ uri: imageUri }} style={styles.image} resizeMode="contain" />
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={() => {
+                  Alert.alert(
+                    'Image Added to Canvas!',
+                    'Your AI-generated image has been added to the canvas. Navigate to the canvas to see it.',
+                    [
+                      {
+                        text: 'Go to Canvas',
+                        onPress: () => router.push('/(drawer)/(tabs)/CanvasScreen'),
+                      },
+                      { text: 'Stay Here' },
+                    ]
+                  );
+                }}
+              >
+                <Text style={styles.saveButtonText}>Go to Canvas</Text>
+              </TouchableOpacity>
             </View>
           )}
         </ScrollView>
@@ -193,10 +193,7 @@ const PromptScreen = () => {
 export default PromptScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
   content: {
     padding: 20,
     paddingTop: 20 + (StatusBar.currentHeight || 0),
@@ -291,6 +288,32 @@ const styles = StyleSheet.create({
   canvasButtonText: {
     color: '#fff',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  styleWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+    justifyContent: 'center',
+    gap: 10,
+  },
+  styleButton: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    margin: 4,
+  },
+  selectedStyleButton: {
+    backgroundColor: '#e9d5ff',
+    borderColor: '#a855f7',
+  },
+  styleText: {
+    color: '#555',
+  },
+  selectedStyleText: {
+    color: '#7e22ce',
     fontWeight: '600',
   },
 });

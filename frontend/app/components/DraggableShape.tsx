@@ -577,6 +577,7 @@ const DraggableShape: React.FC<DraggableShapeProps> = ({ shape, onLongPress, set
                   },
                   isSelected && !shape.isLocked && styles.selectedBorder
                 ]}>
+                  
                   {/* Background Image for kite */}
                   {shape.backgroundImage && (
                     <View style={{
@@ -956,6 +957,10 @@ const styles = StyleSheet.create({
   borderColor: '#888',
   borderStyle: 'dashed',
 },
+image: {
+  resizeMode: 'contain',
+},
+
   lockOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'transparent',

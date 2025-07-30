@@ -48,6 +48,8 @@ export interface ShapeType {
   maskedShape?:'rectangle' | 'circle' | 'oval' | 'diamond' | 'square';
   backgroundImage?: string;
   backgroundImageMode?: 'cover' | 'contain' | 'stretch';
+   action?: 'navigate' | 'submit' | null; // for buttons
+  targetScreenId?: string; // if the button is meant to navigat
 }
 
 export type ShapeData = {
@@ -89,53 +91,5 @@ export type LinePreview = {
   x2: number;
   y2: number;
 };
-
-
-// types/CanvasNode.ts
-export type NodeType =
-  | 'rectangle'
-  | 'circle'
-  | 'text'
-  | 'image'
-  | 'line'
-  | 'arrow'
-  | 'frame'
-  | 'group'
-  | 'component'
-  | 'instance';
-
-export interface CanvasNode {
-  id: string;
-  type: NodeType;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation?: number;
-  parentId?: string; // For frames/groups/components
-  children?: string[]; // IDs of child nodes (for frames/groups)
-  locked?: boolean;
-  visible?: boolean;
-
-  style?: {
-    fillColor?: string;
-    strokeColor?: string;
-    strokeWidth?: number;
-    borderRadius?: number;
-
-    // For text
-    text?: string;
-    fontSize?: number;
-    fontWeight?: 'normal' | 'bold';
-    fontColor?: string;
-
-    // For images
-    imageUri?: string;
-
-    // For lines/arrows
-    points?: { x: number; y: number }[];
-    lineStyle?: 'solid' | 'dashed' | 'dotted';
-  };
-}
 
 

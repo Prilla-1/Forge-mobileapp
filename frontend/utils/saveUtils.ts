@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ShapeType } from '../constants/type';
 
-const BACKEND_URL = 'http://10.222.231.165:8081/api';
+const BACKEND_URL = 'http://10.212.110.165:8081/api';
 
 // const BACKEND_URL = 'http://10.21.192.165:8081';
 
